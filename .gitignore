@@ -1,0 +1,76 @@
+# Safe baseline .gitignore for the AI Workflow Starter.
+# /init-project EXTENDS this file with entries for the chosen stack — it must
+# not replace it. Keep these stack-agnostic essentials at the top.
+
+# ── Environment & secrets ─────────────────────────────────────────────────
+# Never commit real secrets. Keep them in .env (gitignored) and document the
+# expected variables in .env.example (which IS committed). See workflow/principles.md.
+.env
+.env.*
+!.env.example
+*.local
+
+# Credentials / keys / certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.pkcs12
+id_rsa
+id_dsa
+*.crt
+secrets.*
+credentials.*
+.netrc
+
+# ── OS junk ───────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Editors / IDEs ────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+# VS Code: ignore local settings but let a project share a curated set if it wants.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Caches, build output & coverage (generic; stack-specific ones go below) ─
+.cache/
+tmp/
+temp/
+dist/
+build/
+out/
+coverage/
+.coverage
+htmlcov/
+
+# ── Generated distribution archives ───────────────────────────────────────
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ── Stack-specific entries (added by /init-project) ───────────────────────
+# e.g. node_modules/, __pycache__/, target/, vendor/, .venv/ ...

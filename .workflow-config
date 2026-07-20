@@ -1,0 +1,8 @@
+# Workflow config. Versioned with the project.
+# The agent reads this file so it doesn't have to ask every time.
+
+# Issue tracker: github (default) or jira
+issue_tracker=github
+
+# If issue_tracker=jira, uncomment and fill in:
+# jira_project=ABC

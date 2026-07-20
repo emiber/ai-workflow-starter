@@ -1,0 +1,39 @@
+name: CI (template not initialized)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Quality gate — not initialized
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── /init-project fills this in for the chosen stack ──────────────────
+      # This is an UNINITIALIZED TEMPLATE. The workflow intentionally fails until
+      # /init-project configures it, so a project can't merge with an unconfigured
+      # quality gate. /init-project must: rename this workflow back to `name: CI`
+      # and the job to a real name, and replace the guard step below with real
+      # setup / install / lint / test steps. The test step MUST fail when coverage
+      # drops under the threshold in docs/ARCHITECTURE.md (default 85%).
+      #
+      # Node + TypeScript example:
+      #   - uses: actions/setup-node@v4
+      #     with: { node-version: 'lts/*', cache: 'npm' }
+      #   - run: npm ci
+      #   - run: npm run lint
+      #   - run: npx vitest run --coverage   # set coverage.thresholds.lines: 85 in vitest config
+      #
+      # Python example:
+      #   - uses: actions/setup-python@v5
+      #     with: { python-version: '3.x' }
+      #   - run: pip install -r requirements.txt   # or: uv sync
+      #   - run: ruff check .
+      #   - run: pytest --cov --cov-fail-under=85
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Quality gate not configured
+        run: |
+          echo "::error::Template not initialized — the CI quality gate hasn't been configured yet. Run /init-project (or edit .github/workflows/ci.yml per workflow/scaffolding.md) to add real lint/test/coverage steps."
+          exit 1
