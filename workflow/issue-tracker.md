@@ -48,6 +48,18 @@ If the user doesn't answer or answers empty, assume **github**.
 
 > Note on key vs. number: on GitHub the issue is a number (`42`); on Jira it's a key (`ABC-123`). When the user passes the argument, take it as-is: if the tracker is Jira, expect a key; if GitHub, a number.
 
+### Parent/child (epics)
+
+Both trackers can group issues under an epic. The full model — including the integration
+branch — is in `workflow/epics.md`. The tracker-specific bit:
+
+- **GitHub**: an epic is an issue with the `epic` label; children are linked as native
+  sub-issues via `gh api` (`gh` has no sub-issue subcommand). List epics with
+  `gh issue list --label epic --state open`; list an epic's children with
+  `gh api repos/{owner}/{repo}/issues/<epicN>/sub_issues --jq '.[].number'`.
+- **Jira**: an epic is the native **Epic** issue type; children carry the **Epic Link /
+  parent** field. No label convention needed.
+
 ## What does NOT change between trackers
 
-The git flow is identical in both cases: `main → branch → implementation → PR` (see `git-flow.md`). The PR always goes to GitHub. The only thing that changes is where the issue is read from / written to.
+The git flow is identical in both cases: `main → branch → implementation → PR` (see `git-flow.md`). The PR always goes to GitHub. The only thing that changes is where the issue is read from / written to. Epics behave the same way across trackers too — same integration branch and `/finish-epic` flow (see `workflow/epics.md`); only how the parent/child link is stored differs (label + sub-issue on GitHub, Epic type + Epic Link on Jira).

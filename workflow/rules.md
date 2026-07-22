@@ -12,7 +12,9 @@ rules inline and point here for the full list. If a rule changes, change it here
 3. **Ask when something is ambiguous.** One extra question is cheaper than a wrong
    assumption. Don't invent requirements.
 4. **Never merge or push to `main`.** The flow ends with an open PR (see
-   `workflow/git-flow.md`).
+   `workflow/git-flow.md`). A PR may target `main` or, for an issue that belongs to an
+   epic, that epic's integration branch (see `workflow/epics.md`) — either way it's left
+   open for human review, never merged.
 5. **Never `git commit` or `git push` unless the user explicitly asks.** Running
    the `/work-issue` flow counts as that explicit request for its
    commit → push → PR steps. Outside of that, make the changes and let the user
