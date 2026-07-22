@@ -26,6 +26,7 @@ You plan with Opus and implement with Sonnet (see `workflow/model-strategy.md`).
 - `/refine-issue <n>` — refines and clarifies an issue. Reads `workflow/issue-refinement.md`.
 - `/work-issue <n>` — implements a refined issue following the git flow. Child issues of an epic target the epic's integration branch. Reads `workflow/git-flow.md` and `workflow/epics.md`.
 - `/finish-epic <n>` — opens the integration PR (epic branch → `main`) when an epic's children are done. Reads `workflow/epics.md`.
+- `/review-pr <n>` — reviews an open PR against its linked issue's acceptance criteria and the Definition of Done. Read-only: never commits or pushes. Reads `workflow/pr-review.md`.
 
 ## Reading order at startup
 
