@@ -7,8 +7,8 @@ in VS Code via *prompt files* (`.github/prompts/*.prompt.md`, invoked as `/name`
 and the Copilot CLI ships built-in ones (`/model`, `/context`, ...) plus a plan
 mode, custom agents, and skills. What this starter does *not* ship is Copilot
 prompt files for its own commands: `/init-project`, `/create-issue`,
-`/refine-issue`, and `/work-issue` are defined only under `.claude/commands/`
-(Claude Code format).
+`/refine-issue`, `/work-issue`, and `/finish-epic` are defined only under
+`.claude/commands/` (Claude Code format).
 
 So with Copilot you have two options:
 
@@ -26,8 +26,9 @@ Read, in order:
 4. `workflow/issue-creation.md` — how to create a new issue in the tracker.
 5. `workflow/issue-refinement.md` — how to refine an issue before implementing it.
 6. `workflow/git-flow.md` — the git flow contract: `main → branch → implementation → PR`.
-7. `workflow/model-strategy.md` — which model to use in each phase (Claude Code specific; ignore if it doesn't apply).
-8. `workflow/issue-tracker.md` — GitHub (default) or Jira; how it's resolved and each one's commands.
+7. `workflow/epics.md` — epics: parent/child issues and integration branches, plus the `/finish-epic` contract.
+8. `workflow/model-strategy.md` — which model to use in each phase (Claude Code specific; ignore if it doesn't apply).
+9. `workflow/issue-tracker.md` — GitHub (default) or Jira; how it's resolved and each one's commands.
 
 ## Hard rules
 

@@ -1,6 +1,6 @@
 # Git flow — contract
 
-Guide for `/work-issue <n>`. Defines the `main → branch → implementation → PR` cycle. This contract is **strict**: don't modify it unless the user asks.
+Guide for `/work-issue <n>`. Defines the `main → branch → implementation → PR` cycle. This contract is **strict**: don't modify it unless the user asks. Issues that belong to an epic add an integration-branch layer on top of this cycle (child branches target the epic's branch, not `main`) — see `workflow/epics.md`.
 
 ## Preflight checks
 
@@ -25,6 +25,11 @@ Fetch the issue using the selected tracker and read its acceptance criteria. Ver
 that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refining
 it first; if the user insists, refine it minimally on the spot.
 
+Also check whether the issue has a **parent epic** (GitHub: it's a sub-issue of an
+`epic`-labeled issue; Jira: it has an Epic Link / parent). If it does, this is a child
+of an epic and uses the **integration-branch flow** — steps 3 and 5 change as noted
+below. See `workflow/epics.md`. If it has no parent, the flow is exactly as written.
+
 ### 2. Pull the latest main
 
 ```bash
@@ -34,7 +39,7 @@ git pull --ff-only origin main
 
 If the pull fails due to conflicts or divergence, stop and warn the user. Don't force it.
 
-### 3. Create a new branch from main
+### 3. Create the working branch
 
 Branch name derived from the issue. Convention:
 
@@ -44,8 +49,28 @@ Branch name derived from the issue. Convention:
 
 where `<type>` is `feat`, `fix`, `chore`, `refactor`, `docs`, etc., and `<short-slug>` is a kebab-case summary of the title.
 
+**No parent epic (the common case):** branch off `main`.
+
 ```bash
 git checkout -b feat/<n>-<slug>
+```
+
+**Issue has a parent epic:** branch off the epic's integration branch instead of
+`main`, and create that branch **lazily** from `main` if this is the first child (see
+`workflow/epics.md`).
+
+```bash
+# epicN / epic-slug come from the parent epic
+git fetch origin
+if ! git show-ref --verify --quiet refs/heads/epic/<epicN>-<slug> \
+   && ! git ls-remote --exit-code --heads origin epic/<epicN>-<slug> >/dev/null; then
+  # first child → create the integration branch from the latest main and publish it
+  git checkout main && git pull --ff-only origin main
+  git checkout -b epic/<epicN>-<slug>
+  git push -u origin epic/<epicN>-<slug>
+fi
+git checkout epic/<epicN>-<slug> && git pull --ff-only origin epic/<epicN>-<slug>
+git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 ```
 
 ### 4. Implement
@@ -68,17 +93,26 @@ Refs #<n>
 
 ### 5. Push and PR
 
-The PR always goes to GitHub. The reference to the issue depends on the tracker:
+The PR always goes to GitHub. Two things depend on whether the issue has a parent epic:
+the **base branch** and the **issue reference**.
 
-- **GitHub**: include `Closes #<n>` in the body so the issue closes on merge.
-- **Jira**: include the key in the title (e.g. `[ABC-123] <title>`) and mention it in the body. Closing the Jira issue is handled by a human or Jira automation, not this flow.
+- **Base branch**: `main` normally; the epic's integration branch (`epic/<epicN>-<slug>`)
+  if the issue is a child of an epic.
+- **Issue reference** (GitHub):
+  - No parent → `Closes #<n>` so the issue closes when the PR merges into `main`.
+  - Child of an epic → `Refs #<n>`, **not** `Closes`. A closing keyword only fires when the
+    PR merges into the default branch, and this PR targets the epic branch. Children are
+    closed later, all at once, by the `/finish-epic` PR into `main` (see `workflow/epics.md`).
+- **Issue reference** (Jira): include the key in the title (e.g. `[ABC-123] <title>`) and
+  mention it in the body. Closing the Jira issue is handled by a human or Jira automation,
+  not this flow — same regardless of epics.
 
 ```bash
-git push -u origin feat/<id>-<slug>
+git push -u origin feat/<n>-<slug>
 gh pr create \
-  --base main \
+  --base <main, or epic/<epicN>-<slug> for a child> \
   --title "<type>: <title>" \
-  --body "<issue reference: 'Closes #<n>' on GitHub, '[ABC-123]' on Jira>
+  --body "<issue reference: 'Closes #<n>' (standalone) / 'Refs #<n>' (child) on GitHub, '[ABC-123]' on Jira>
 
 ## What it does
 ...
@@ -101,7 +135,7 @@ An issue isn't done until all of these hold. Check them before opening the PR:
 - [ ] Linter and tests pass locally.
 - [ ] No secrets or credentials committed.
 - [ ] Docs updated if behavior or setup changed (`README` / `ARCHITECTURE` / etc.).
-- [ ] PR opened against `main` and left open for review (not merged).
+- [ ] PR opened and left open for review (not merged) — against `main`, or against the epic's integration branch if the issue is a child of an epic (see `workflow/epics.md`).
 
 ## Hard rules
 

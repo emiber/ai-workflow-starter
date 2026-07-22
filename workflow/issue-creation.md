@@ -31,7 +31,32 @@ short body:
 Ask only what's missing — one or two questions, not the full refinement
 interrogation. If the user gives a one-liner and says "just create it", create it.
 
-### 2. Draft the issue
+### 2. Assess size and placement (epics)
+
+Two quick checks before drafting. Both are **propose-and-confirm** — never decide the
+structure silently, and never invent a parent. See `workflow/epics.md` for the how.
+
+- **Is it epic-sized?** If the request clearly spans several deliverables or components,
+  or would sensibly be more than one PR, it's probably an **epic**, not one issue. Say so
+  and ask how to handle it:
+  - create it as an **epic** (a parent issue), and capture children as separate issues
+    (now or later), or
+  - keep it as a **single issue** (it's smaller than it looks, or it'll be split during
+    refinement).
+
+  If epic: create the parent labeled `epic` (GitHub) / as an Epic type (Jira). Capturing
+  the children now is optional — offer to, but don't force a full breakdown at capture time.
+
+- **Does it belong under an existing epic?** For a normal (non-epic) issue, list open epics
+  — GitHub `gh issue list --label epic --state open`, Jira the project's epics. If the new
+  issue plausibly fits one, propose linking it as a child and confirm. If confirmed, create
+  it and then link it (GitHub sub-issue via `gh api`, Jira Epic Link). If nothing fits or
+  the user declines, create it standalone.
+
+If neither applies (a plain, self-contained issue with no matching epic), skip this and
+carry on — this is the common case.
+
+### 3. Draft the issue
 
 Write a concise issue:
 
@@ -42,14 +67,22 @@ Write a concise issue:
 
 Show the draft (title + body) to the user and confirm before creating.
 
-### 3. Create it in the tracker
+### 4. Create it in the tracker
 
 - **GitHub**: `gh issue create --title "<title>" --body-file <file>` (add
   `--label <type>` if the project uses type labels). Returns the issue URL/number.
 - **Jira**: `jira issue create` with the summary, description, and the project's
   issue type. Returns the key.
 
-### 4. Output
+If step 2 decided this is an **epic** or a **child**, apply the hierarchy now
+(details in `workflow/epics.md`):
+
+- **Epic**: add the `epic` label on GitHub (`--label epic`) / create it as an Epic type
+  on Jira.
+- **Child**: after creating it, link it to its parent — GitHub sub-issue via `gh api`,
+  Jira Epic Link — and confirm the link took.
+
+### 5. Output
 
 Confirm with the issue number/key and its URL. Suggest `/refine-issue <n>` to make it
 implementable, then `/work-issue <n>` to build it.

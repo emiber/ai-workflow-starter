@@ -3,6 +3,8 @@
 Structure an issue should have after going through `/refine-issue`.
 
 ```markdown
+**Epic / parent**: #<n> — the epic this issue is a child of. Omit if standalone. (See `workflow/epics.md`.)
+
 ## Goal
 What problem it solves and for whom. One or two sentences.
 

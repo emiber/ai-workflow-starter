@@ -34,9 +34,10 @@ It gives you two things:
 | Command | What it does | Phase |
 |---|---|---|
 | `/init-project` | Interactive scaffolding: asks project type, components and stack, then generates a runnable base. | Design (Opus) |
-| `/create-issue <description>` | Creates a new issue in the tracker from a description — light capture, not full refinement. | Capture (Opus) |
+| `/create-issue <description>` | Creates a new issue in the tracker from a description — light capture, not full refinement. Can create it as an epic or nest it under an existing one. | Capture (Opus) |
 | `/refine-issue <n>` | Turns a raw issue into an implementable one by asking every question needed. | Analysis (Opus) |
-| `/work-issue <n>` | Implements a refined issue: `main → branch → code → PR`. | Implementation (Sonnet) |
+| `/work-issue <n>` | Implements a refined issue: `main → branch → code → PR`. A child of an epic targets the epic's integration branch. | Implementation (Sonnet) |
+| `/finish-epic <n>` | Opens the integration PR (epic branch → `main`) once an epic's children are done. | Integration (Sonnet) |
 
 > Not on Claude Code? The same workflow works with Codex (`AGENTS.md`) and GitHub Copilot (`.github/copilot-instructions.md`). For Codex, this starter ships skills under `.agents/skills/` (invoked with `/skills` or `$skill-name`) that mirror the Claude Code commands, so Codex picks them up automatically. Copilot supports slash commands via prompt files under `.github/prompts/`, but those aren't shipped here — with Copilot, use natural language ("refine issue 42") or add the equivalent prompt files. Either way the logic lives in `workflow/`.
 
@@ -75,6 +76,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 - **No secrets in the repo.** Credentials live in gitignored `.env` files; a `.env.example` holds placeholders.
 - **Minimal dependencies.** Every new dependency has to be justified.
 - **One PR = one issue.** Changes stay small and focused; unrelated work becomes its own issue.
+- **Epics for big work.** Work too large for one PR becomes an epic (a parent issue). Its children each merge into a shared integration branch, and the whole epic ships to `main` via one PR opened with `/finish-epic` (see `workflow/epics.md`).
 - **Docs travel with code.** Behavior or setup changes update the docs in the same PR.
 - **CI enforces the gate.** A GitHub Actions workflow runs lint + tests + the coverage threshold (default 85%) on every PR (`/init-project` fills it in for your stack).
 
@@ -95,12 +97,14 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 │   ├── init-project.md             # Interactive scaffolding
 │   ├── create-issue.md             # Create a new issue in the tracker
 │   ├── refine-issue.md             # Issue refinement
-│   └── work-issue.md               # main → branch → impl → PR
-├── .agents/skills/                 # Same four, as Codex skills (mirror the commands)
+│   ├── work-issue.md               # main → branch → impl → PR
+│   └── finish-epic.md              # Epic integration branch → main PR
+├── .agents/skills/                 # Same five, as Codex skills (mirror the commands)
 │   ├── init-project/SKILL.md
 │   ├── create-issue/SKILL.md
 │   ├── refine-issue/SKILL.md
-│   └── work-issue/SKILL.md
+│   ├── work-issue/SKILL.md
+│   └── finish-epic/SKILL.md
 ├── workflow/
 │   ├── README.md                   # This file — how the workflow works
 │   ├── rules.md                    # Canonical hard rules (agent files point here)
@@ -109,6 +113,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 │   ├── issue-creation.md           # How to create an issue
 │   ├── issue-refinement.md         # How to refine an issue
 │   ├── git-flow.md                 # The git flow contract
+│   ├── epics.md                    # Epics: parent/child issues + integration branches
 │   ├── issue-tracker.md            # GitHub (default) or Jira
 │   └── model-strategy.md           # Opus to plan, Sonnet to implement
 └── docs/
