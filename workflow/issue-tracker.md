@@ -53,12 +53,28 @@ The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/a
 ### Parent/child (epics)
 
 Both trackers can group issues under an epic. The full model — including the integration
-branch — is in `workflow/epics.md`. The tracker-specific bit:
+branch — is in `workflow/epics.md`. This section is the **single source for the concrete
+parent/child commands**; other guides reference it instead of repeating the syntax.
 
-- **GitHub**: an epic is an issue with the `epic` label; children are linked as native
-  sub-issues via `gh api` (`gh` has no sub-issue subcommand). List epics with
-  `gh issue list --label epic --state open`; list an epic's children with
-  `gh api repos/{owner}/{repo}/issues/<epicN>/sub_issues --jq '.[].number'`.
+- **GitHub**: an epic is an issue with the `epic` label; children are native **sub-issues**.
+  Modern `gh` (**≥ 2.94**) has first-class commands for the relationship — prefer them:
+
+  ```bash
+  gh issue list --label epic --state open                  # list open epics
+  gh issue create --parent <epicN> --title "…" --body "…"  # create a child already linked
+  gh issue edit <epicN> --add-sub-issue <childN>           # link an existing issue as a child
+  gh issue edit <childN> --remove-parent                   # unlink a child
+  gh issue view <n> --json parent,subIssues,subIssuesSummary
+  #   .parent            → the epic this issue belongs to (null if standalone)
+  #   .subIssues.nodes[] → an epic's children (use .number)
+  #   .subIssuesSummary  → { total, completed, percentCompleted }
+  ```
+
+  **Fallback** (gh < 2.94, or GitHub Enterprise Server without these commands): use the REST
+  API. List children with `gh api repos/{owner}/{repo}/issues/<epicN>/sub_issues --jq '.[].number'`;
+  link one with `gh api --method POST repos/{owner}/{repo}/issues/<epicN>/sub_issues -F sub_issue_id=<id>`,
+  where `<id>` is the child's **internal id** (`gh api repos/{owner}/{repo}/issues/<childN> --jq .id`),
+  not its issue number. Only use this when the native commands aren't available.
 - **Jira**: an epic is the native **Epic** issue type; children carry the **Epic Link /
   parent** field. No label convention needed.
 

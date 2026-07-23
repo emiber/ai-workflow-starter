@@ -25,10 +25,16 @@ Fetch the issue using the selected tracker and read its acceptance criteria. Ver
 that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refining
 it first; if the user insists, refine it minimally on the spot.
 
-Also check whether the issue has a **parent epic** (GitHub: it's a sub-issue of an
-`epic`-labeled issue; Jira: it has an Epic Link / parent). If it does, this is a child
-of an epic and uses the **integration-branch flow** — steps 3 and 5 change as noted
-below. See `workflow/epics.md`. If it has no parent, the flow is exactly as written.
+Also check whether the issue has a **parent epic** — determine this from structured data,
+not a guess:
+
+- **GitHub**: `gh issue view <n> --json parent` — a non-null `.parent` means the issue is a
+  child of that epic (`gh` ≥ 2.94; see `workflow/issue-tracker.md`).
+- **Jira**: it has an Epic Link / parent field.
+
+If it does, this is a child of an epic and uses the **integration-branch flow** — steps 3
+and 5 change as noted below (see `workflow/epics.md`). If it has no parent, the flow is
+exactly as written.
 
 ### 2. Pull the latest main
 

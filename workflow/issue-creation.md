@@ -50,8 +50,9 @@ structure silently, and never invent a parent. See `workflow/epics.md` for the h
 - **Does it belong under an existing epic?** For a normal (non-epic) issue, list open epics
   — GitHub `gh issue list --label epic --state open`, Jira the project's epics. If the new
   issue plausibly fits one, propose linking it as a child and confirm. If confirmed, create
-  it and then link it (GitHub sub-issue via `gh api`, Jira Epic Link). If nothing fits or
-  the user declines, create it standalone.
+  it and then link it (GitHub: `gh issue edit <epicN> --add-sub-issue <childN>`; Jira: Epic
+  Link — see `workflow/issue-tracker.md`). If nothing fits or the user declines, create it
+  standalone.
 
 If neither applies (a plain, self-contained issue with no matching epic), skip this and
 carry on — this is the common case.
@@ -79,8 +80,9 @@ If step 2 decided this is an **epic** or a **child**, apply the hierarchy now
 
 - **Epic**: add the `epic` label on GitHub (`--label epic`) / create it as an Epic type
   on Jira.
-- **Child**: after creating it, link it to its parent — GitHub sub-issue via `gh api`,
-  Jira Epic Link — and confirm the link took.
+- **Child**: after creating it, link it to its parent — GitHub: `gh issue edit <epicN>
+  --add-sub-issue <childN>`; Jira: Epic Link (see `workflow/issue-tracker.md`) — and confirm
+  the link took (`gh issue view <childN> --json parent`).
 
 ### 5. Output
 
