@@ -23,17 +23,10 @@ org-level feature), so an epic is:
 - **A parent issue labeled `epic`.** The label is what makes epics listable and
   detectable (`gh issue list --label epic --state open`).
 - **Linked to its children via native sub-issues.** GitHub has a real parent/child
-  sub-issue relationship, and modern `gh` (**≥ 2.94**) exposes it directly:
-
-  ```bash
-  gh issue edit <epicN> --add-sub-issue <childN>                          # link a child
-  gh issue view <epicN> --json subIssues --jq '.subIssues.nodes[].number' # list children
-  ```
-
-  On older `gh` or GitHub Enterprise Server without these commands, fall back to the REST
-  API (`gh api .../sub_issues`). The concrete commands, including that fallback, live in
-  `workflow/issue-tracker.md` (Parent/child) — this guide references them rather than
-  repeating the syntax.
+  sub-issue relationship. The concrete commands to link a child, list an epic's children,
+  and detect a child's parent — native `gh` (≥ 2.94), with a REST fallback for older `gh`
+  or GitHub Enterprise Server — live in `workflow/issue-tracker.md` (Parent/child). Use
+  them from there; this guide doesn't repeat the syntax.
 
 The label alone is enough to make the flow work; the sub-issue link adds the native
 tree in GitHub's UI and lets the flow enumerate children reliably. Create both.
@@ -106,8 +99,8 @@ an **open PR**; never merge, never push to `main`.
 
 ### Steps
 
-1. **Fetch the epic and its children.** GitHub: `gh issue view <n> --json subIssues,subIssuesSummary`
-   (see `workflow/issue-tracker.md`). Jira: list issues with this Epic as parent.
+1. **Fetch the epic and its children.** GitHub: list the epic's children (parent/child
+   commands in `workflow/issue-tracker.md`). Jira: list issues with this Epic as parent.
 2. **Check children are done.** For each child, look for its PR into the epic branch. A
    child counts as done when that PR is **merged** into `epic/<n>-<slug>` — whether or not
    the child *issue* is still open. Leaving child issues open until the epic reaches `main`

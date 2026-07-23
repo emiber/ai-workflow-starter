@@ -71,10 +71,25 @@ parent/child commands**; other guides reference it instead of repeating the synt
   ```
 
   **Fallback** (gh < 2.94, or GitHub Enterprise Server without these commands): use the REST
-  API. List children with `gh api repos/{owner}/{repo}/issues/<epicN>/sub_issues --jq '.[].number'`;
-  link one with `gh api --method POST repos/{owner}/{repo}/issues/<epicN>/sub_issues -F sub_issue_id=<id>`,
-  where `<id>` is the child's **internal id** (`gh api repos/{owner}/{repo}/issues/<childN> --jq .id`),
-  not its issue number. Only use this when the native commands aren't available.
+  API via `gh api`. **Quote every path** — the `{owner}/{repo}` braces break unquoted in
+  PowerShell. All three operations have a fallback:
+
+  ```bash
+  # List an epic's children:
+  gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --jq '.[].number'
+
+  # Link a child (the endpoint takes the child's internal id, NOT its issue number):
+  child_id=$(gh api "repos/{owner}/{repo}/issues/<childN>" --jq '.id')
+  gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" -F sub_issue_id="$child_id"
+
+  # Detect a child's parent epic — read the parent reference from the issue payload
+  # (field name can vary by API version; adjust if empty):
+  gh api "repos/{owner}/{repo}/issues/<n>" --jq '.parent.number // .parent_issue_url // empty'
+  ```
+
+  Last resort for parent detection, if the payload exposes no parent field on your API
+  version: treat the issue as a child when it appears in some `epic`-labeled issue's
+  `sub_issues` list. Only use these when the native commands aren't available.
 - **Jira**: an epic is the native **Epic** issue type; children carry the **Epic Link /
   parent** field. No label convention needed.
 
