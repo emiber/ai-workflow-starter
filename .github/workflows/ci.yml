@@ -2,7 +2,11 @@ name: CI (template not initialized)
 
 on:
   pull_request:
-    branches: [main]
+    # main and epic integration branches: epic child PRs target epic/<n>-<slug>,
+    # so the quality gate must run on those too (see workflow/epics.md).
+    branches:
+      - main
+      - "epic/**"
 
 jobs:
   quality:

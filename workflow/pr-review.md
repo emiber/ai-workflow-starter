@@ -83,7 +83,7 @@ Improvements worth considering but not required for merge. Same format as blocke
 
 #### Summary
 
-One short paragraph: overall assessment, whether the PR is ready to merge (pending blockers), and the recommended next step.
+One short paragraph: overall assessment, whether any blockers were found, what remains unverifiable from the diff alone, and the recommended next validation step. Do not state that the PR is "ready to merge" or recommend merging — that decision belongs to the human reviewer (see Hard rules).
 
 ## Output conventions
 
