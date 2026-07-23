@@ -38,7 +38,7 @@ It gives you two things:
 | `/refine-issue <n>` | Turns a raw issue into an implementable one by asking every question needed. | Analysis (Opus) |
 | `/work-issue <n>` | Implements a refined issue: `main → branch → code → PR`. A child of an epic targets the epic's integration branch. | Implementation (Sonnet) |
 | `/finish-epic <n>` | Opens the integration PR (epic branch → `main`) once an epic's children are done. | Integration (Sonnet) |
-| `/review-pr <n>` | Reviews an open PR against its linked issue's acceptance criteria and the Definition of Done. Read-only: never commits or pushes. | Review (Sonnet) |
+| `/review-pr <n>` | Reviews an open PR against its linked issue(s)' acceptance criteria and the Definition of Done. Read-only: never commits or pushes. | Review (Sonnet) |
 
 > Not on Claude Code? The same workflow works with Codex (`AGENTS.md`) and GitHub Copilot (`.github/copilot-instructions.md`). For Codex, this starter ships skills under `.agents/skills/` (invoked with `/skills` or `$skill-name`) that mirror the Claude Code commands, so Codex picks them up automatically. Copilot supports slash commands via prompt files under `.github/prompts/`, but those aren't shipped here — with Copilot, use natural language ("refine issue 42") or add the equivalent prompt files. Either way the logic lives in `workflow/`.
 

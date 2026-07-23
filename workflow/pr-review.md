@@ -1,6 +1,6 @@
 # PR review
 
-Guide for `/review-pr <n>`. Reviews an open PR against its linked issue's acceptance criteria and the Definition of Done from `workflow/git-flow.md`. The output is a structured report with **blockers** (must fix before merge) and **suggestions** (improvements worth considering).
+Guide for `/review-pr <n>`. Reviews an open PR against its linked issue(s)' acceptance criteria and the Definition of Done from `workflow/git-flow.md`. The output is a structured report with **blockers** (must fix before merge) and **suggestions** (improvements worth considering).
 
 This is a **read-only command**: it never commits, pushes, or modifies files.
 
