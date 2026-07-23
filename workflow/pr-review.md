@@ -15,6 +15,7 @@ Run these before anything else. They are read-only — if one fails, stop and re
 | Check | How | If it fails |
 |---|---|---|
 | `gh` authenticated | `gh auth status` | `gh auth login` |
+| `gh` supports `parent` (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or on older `gh` / GitHub Enterprise Server, read the linked issue's parent via the REST fallback in `workflow/issue-tracker.md`. Step 2 uses `parent` to classify the PR against its base branch. |
 | PR exists and is open | `gh pr view <n> --json state` | Report status and stop — if merged/closed, there is nothing to review. |
 
 ## Steps
@@ -37,8 +38,9 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   ```
   This is authoritative for a PR into the default branch that uses a closing keyword (`Closes`/`Fixes`/`Resolves #<n>`). If it returns nothing — the normal case for an **epic child PR** (non-default base, references its issue with `Refs`) or any link-only PR — fall back to scanning the PR body for **keyworded references only**: `Closes`/`Fixes`/`Resolves #<n>` and `Refs #<n>`. Collect **every** match; a PR may legitimately link more than one issue. A **bare `#<n>` with no keyword is not an authoritative link** — treat it at most as "possibly related", never as the reviewed issue. Fetch each resolved issue with:
   ```bash
-  gh issue view <issueN> --json title,body,labels,comments
+  gh issue view <issueN> --json title,body,labels,comments,parent
   ```
+  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) tells a child issue — part of an epic — from a standalone one, which the target-branch check in step 4 relies on.
 - **Jira**: look for a Jira key in the title or body (e.g. `[ABC-123]`). Fetch with:
   ```bash
   jira issue view <KEY>

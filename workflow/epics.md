@@ -23,21 +23,10 @@ org-level feature), so an epic is:
 - **A parent issue labeled `epic`.** The label is what makes epics listable and
   detectable (`gh issue list --label epic --state open`).
 - **Linked to its children via native sub-issues.** GitHub has a real parent/child
-  sub-issue relationship, but `gh` has no dedicated subcommand for it, so use `gh api`:
-
-  ```bash
-  # Link issue <childN> as a sub-issue of epic <epicN>.
-  # NOTE: the endpoint takes the child's internal id, NOT its issue number.
-  child_id=$(gh api "repos/{owner}/{repo}/issues/<childN>" --jq .id)
-  gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" \
-    -F sub_issue_id="$child_id"
-
-  # List an epic's children:
-  gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --jq '.[].number'
-  ```
-
-  `{owner}/{repo}` is filled by `gh` automatically inside a repo, so you can write the
-  paths literally as shown.
+  sub-issue relationship. The concrete commands to link a child, list an epic's children,
+  and detect a child's parent — native `gh` (≥ 2.94), with a REST fallback for older `gh`
+  or GitHub Enterprise Server — live in `workflow/issue-tracker.md` (Parent/child). Use
+  them from there; this guide doesn't repeat the syntax.
 
 The label alone is enough to make the flow work; the sub-issue link adds the native
 tree in GitHub's UI and lets the flow enumerate children reliably. Create both.
@@ -110,8 +99,8 @@ an **open PR**; never merge, never push to `main`.
 
 ### Steps
 
-1. **Fetch the epic and its children.** GitHub: `gh api .../issues/<n>/sub_issues`.
-   Jira: list issues with this Epic as parent.
+1. **Fetch the epic and its children.** GitHub: list the epic's children (parent/child
+   commands in `workflow/issue-tracker.md`). Jira: list issues with this Epic as parent.
 2. **Check children are done.** For each child, look for its PR into the epic branch. A
    child counts as done when that PR is **merged** into `epic/<n>-<slug>` — whether or not
    the child *issue* is still open. Leaving child issues open until the epic reaches `main`

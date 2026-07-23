@@ -13,6 +13,7 @@ Run these **before touching anything**. They're read-only — if one fails, stop
 | `main` branch exists | `git show-ref --verify refs/heads/main` | Create it, or tell the agent your default branch name. |
 | `origin` remote set | `git remote get-url origin` | `git remote add origin <url>` — needed for push/PR. |
 | `gh` authenticated | `gh auth status` | `gh auth login`. The PR always goes to GitHub, whatever the issue tracker. |
+| `gh` supports sub-issues (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or, on older `gh` / GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md` for parent detection and sub-issue links. Step 1 reads an issue's `parent` to detect epics, so this is required whenever epics are in play. |
 | Working tree clean | `git status --porcelain` is empty | Commit, stash, or discard changes before starting. |
 | Tracker resolved | see `workflow/issue-tracker.md` | Defaults to GitHub via `.workflow-config`. |
 | Tracker authenticated | Jira only: `jira me` (GitHub already covered above) | Authenticate the Jira CLI and retry. |
@@ -25,10 +26,16 @@ Fetch the issue using the selected tracker and read its acceptance criteria. Ver
 that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refining
 it first; if the user insists, refine it minimally on the spot.
 
-Also check whether the issue has a **parent epic** (GitHub: it's a sub-issue of an
-`epic`-labeled issue; Jira: it has an Epic Link / parent). If it does, this is a child
-of an epic and uses the **integration-branch flow** — steps 3 and 5 change as noted
-below. See `workflow/epics.md`. If it has no parent, the flow is exactly as written.
+Also check whether the issue has a **parent epic** — determine this from structured data,
+not a guess:
+
+- **GitHub**: `gh issue view <n> --json parent` — a non-null `.parent` means the issue is a
+  child of that epic (`gh` ≥ 2.94; see `workflow/issue-tracker.md`).
+- **Jira**: it has an Epic Link / parent field.
+
+If it does, this is a child of an epic and uses the **integration-branch flow** — steps 3
+and 5 change as noted below (see `workflow/epics.md`). If it has no parent, the flow is
+exactly as written.
 
 ### 2. Pull the latest main
 
