@@ -78,9 +78,11 @@ parent/child commands**; other guides reference it instead of repeating the synt
   # List an epic's children:
   gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --jq '.[].number'
 
-  # Link a child (the endpoint takes the child's internal id, NOT its issue number):
-  child_id=$(gh api "repos/{owner}/{repo}/issues/<childN>" --jq '.id')
-  gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" -F sub_issue_id="$child_id"
+  # Link a child — two shell-neutral steps (avoid Bash-only command substitution).
+  # 1) read the child's internal id (NOT its issue number):
+  gh api "repos/{owner}/{repo}/issues/<childN>" --jq '.id'
+  # 2) pass that id as <childId>:
+  gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" -F sub_issue_id=<childId>
 
   # Detect a child's parent epic — read the parent reference from the issue payload
   # (field name can vary by API version; adjust if empty):

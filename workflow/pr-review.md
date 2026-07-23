@@ -15,6 +15,7 @@ Run these before anything else. They are read-only — if one fails, stop and re
 | Check | How | If it fails |
 |---|---|---|
 | `gh` authenticated | `gh auth status` | `gh auth login` |
+| `gh` supports `parent` (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or on older `gh` / GitHub Enterprise Server, read the linked issue's parent via the REST fallback in `workflow/issue-tracker.md`. Step 2 uses `parent` to classify the PR against its base branch. |
 | PR exists and is open | `gh pr view <n> --json state` | Report status and stop — if merged/closed, there is nothing to review. |
 
 ## Steps
