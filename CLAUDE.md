@@ -7,7 +7,7 @@ This project uses a workflow defined in `workflow/`. **Read those files before a
 The full, canonical hard rules live in **`workflow/rules.md`** — read them first.
 The essential safety rules, repeated here so they're never missed:
 
-- **Never merge or push to `main`.** The flow ends with an open PR (see `workflow/git-flow.md`); a child issue's PR may target its epic's integration branch instead of `main` (see `workflow/epics.md`), but it's still left open, never merged.
+- **Never merge or push to `main`.** The flow ends with an open PR.
 - **Never run `git commit` or `git push` unless the user explicitly asks.** Running `/work-issue` counts as that request for its commit → push → PR flow. Don't commit or push on your own initiative.
 - **Never commit secrets or credentials.** Keep them in gitignored `.env` files and provide a `.env.example` with placeholder values.
 - **Plan before non-trivial work, and ask when something is ambiguous.** Don't invent requirements.

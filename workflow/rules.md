@@ -15,10 +15,12 @@ rules inline and point here for the full list. If a rule changes, change it here
    `workflow/git-flow.md`). A PR may target `main` or, for an issue that belongs to an
    epic, that epic's integration branch (see `workflow/epics.md`) — either way it's left
    open for human review, never merged.
-5. **Never `git commit` or `git push` unless the user explicitly asks.** Running
-   the `/work-issue` flow counts as that explicit request for its
-   commit → push → PR steps. Outside of that, make the changes and let the user
-   decide when to commit or push — never do it on your own initiative.
+5. **Never `git commit` or `git push` unless the user explicitly asks.** Invoking a
+   mutating workflow explicitly authorizes only the side effects that workflow declares —
+   e.g. `/work-issue` authorizes its commit → push → PR steps, and `/finish-epic` its
+   epic-branch sync/push and integration PR. It does **not** authorize unrelated commits,
+   pushes, merges, or PRs. Outside of an invoked workflow, make the changes and let the
+   user decide when to commit or push — never do it on your own initiative.
 6. **Never commit secrets or credentials.** Keep them in gitignored `.env` files
    and provide a `.env.example` with placeholder values.
 7. **Language.** All artifacts — code, comments, commit messages, branch names,
