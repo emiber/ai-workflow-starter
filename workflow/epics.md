@@ -112,9 +112,13 @@ an **open PR**; never merge, never push to `main`.
 
 1. **Fetch the epic and its children.** GitHub: `gh api .../issues/<n>/sub_issues`.
    Jira: list issues with this Epic as parent.
-2. **Check children are done.** List each child and its state. If any child is still
-   open or its PR into the epic branch isn't merged, **warn and list them**, and ask the
-   user whether to proceed anyway or wait. Don't silently proceed.
+2. **Check children are done.** For each child, look for its PR into the epic branch. A
+   child counts as done when that PR is **merged** into `epic/<n>-<slug>` — whether or not
+   the child *issue* is still open. Leaving child issues open until the epic reaches `main`
+   is the recommended default (see above), so an open child issue whose PR is already merged
+   is **not** incomplete and must not warn. **Warn and list** only children whose PR into the
+   epic branch is **missing, still open, or closed without merging**, and ask the user whether
+   to proceed anyway or wait. Don't silently proceed.
 3. **Sync the epic branch with main.** Check out `epic/<n>-<slug>`, and merge the latest
    `main` into it so the PR diff is clean:
    ```bash

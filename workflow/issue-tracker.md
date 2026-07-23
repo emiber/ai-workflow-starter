@@ -40,11 +40,13 @@ If the user doesn't answer or answers empty, assume **github**.
 
 ### Jira
 
+The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/ankitpokhrel/jira-cli)** (the `jira` binary, v1.5+) — the specific CLI this workflow targets. Other tools also named `jira` have different command trees, so if you use a different one, map these operations to its equivalents. Install it (e.g. `brew install ankitpokhrel/jira-cli/jira-cli`, or a release binary from the repo), then run `jira init` to authenticate and select the default project.
+
 - View issue: `jira issue view <KEY>` (e.g. `jira issue view ABC-123`)
 - Edit/comment: `jira issue edit <KEY>` / `jira issue comment add <KEY>`
 - Create issue: `jira issue create`
 - Reference in PR: include the key in the PR title/body (e.g. `[ABC-123] ...`). Jira does **not** close the issue automatically via the GitHub PR unless there's an integration configured; assume closing is done by a human or Jira automation, not the flow.
-- Requires: `jira` CLI configured (`jira me` to verify).
+- Requires: `ankitpokhrel/jira-cli` installed and initialized via `jira init` (`jira me` to verify authentication).
 
 > Note on key vs. number: on GitHub the issue is a number (`42`); on Jira it's a key (`ABC-123`). When the user passes the argument, take it as-is: if the tracker is Jira, expect a key; if GitHub, a number.
 

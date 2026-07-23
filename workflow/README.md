@@ -101,12 +101,13 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 │   ├── work-issue.md               # main → branch → impl → PR
 │   ├── finish-epic.md              # Epic integration branch → main PR
 │   └── review-pr.md                # Read-only PR review against linked issue + DoD
-├── .agents/skills/                 # Same five, as Codex skills (mirror the commands)
+├── .agents/skills/                 # Same six, as Codex skills (mirror the commands)
 │   ├── init-project/SKILL.md
 │   ├── create-issue/SKILL.md
 │   ├── refine-issue/SKILL.md
 │   ├── work-issue/SKILL.md
-│   └── finish-epic/SKILL.md
+│   ├── finish-epic/SKILL.md
+│   └── review-pr/SKILL.md
 ├── workflow/
 │   ├── README.md                   # This file — how the workflow works
 │   ├── rules.md                    # Canonical hard rules (agent files point here)
