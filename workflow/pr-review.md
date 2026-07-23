@@ -27,11 +27,15 @@ gh pr view <n> --json number,title,body,baseRefName,headRefName,state,additions,
 
 Note the base branch — it should be `main` or an epic integration branch (`epic/<epicN>-<slug>`).
 
-### 2. Find and fetch the linked issue
+### 2. Find and fetch the linked issue(s)
 
-Parse the PR body for an issue reference:
+Resolve the linked issue **deterministically** — don't bind the review to the first `#<n>` you happen to see.
 
-- **GitHub**: look for `Closes #<n>`, `Refs #<n>`, or any bare `#<n>` mention. Use the first closing/refs keyword found. Fetch with:
+- **GitHub**: prefer the references GitHub itself parsed from the PR's closing keywords:
+  ```bash
+  gh pr view <n> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
+  ```
+  This is authoritative for a PR into the default branch that uses a closing keyword (`Closes`/`Fixes`/`Resolves #<n>`). If it returns nothing — the normal case for an **epic child PR** (non-default base, references its issue with `Refs`) or any link-only PR — fall back to scanning the PR body for **keyworded references only**: `Closes`/`Fixes`/`Resolves #<n>` and `Refs #<n>`. Collect **every** match; a PR may legitimately link more than one issue. A **bare `#<n>` with no keyword is not an authoritative link** — treat it at most as "possibly related", never as the reviewed issue. Fetch each resolved issue with:
   ```bash
   gh issue view <issueN> --json title,body,labels,comments
   ```
@@ -40,7 +44,7 @@ Parse the PR body for an issue reference:
   jira issue view <KEY>
   ```
 
-If no issue reference is found, add it as a blocker — a PR without a linked issue is untrackable.
+Review the diff against **every** resolved issue. If none is found — no closing reference, no explicit `Refs`, no Jira key — add it as a blocker: a PR without a linked issue is untrackable (a bare `#<n>` mention alone doesn't count).
 
 ### 3. Fetch the diff
 
@@ -56,7 +60,7 @@ Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail*
 
 | Item | How to check |
 |---|---|
-| Acceptance criteria met | Compare the diff against each AC in the linked issue; verify each one has corresponding code or is not applicable. Missing coverage of an AC is a blocker. |
+| Acceptance criteria met | Compare the diff against each AC in every linked issue (see step 2); verify each one has corresponding code or is not applicable. Missing coverage of an AC is a blocker. |
 | Tests exist for new components | For each new non-trivial file, look for a corresponding test file. A new component with no tests is a blocker. |
 | No secrets committed | Scan the diff for hardcoded credentials, tokens, API keys, or private keys. Any hit is a blocker. |
 | Docs updated if needed | If behavior, setup, or public interface changed, check that `README` / `docs/ARCHITECTURE.md` / inline docs were updated in the same PR. |
