@@ -105,9 +105,12 @@ an **open PR**; never merge, never push to `main`.
    child counts as done when that PR is **merged** into `epic/<n>-<slug>` — whether or not
    the child *issue* is still open. Leaving child issues open until the epic reaches `main`
    is the recommended default (see above), so an open child issue whose PR is already merged
-   is **not** incomplete and must not warn. **Warn and list** only children whose PR into the
-   epic branch is **missing, still open, or closed without merging**, and ask the user whether
-   to proceed anyway or wait. Don't silently proceed.
+   is **not** incomplete and must not warn. If any child's PR into the epic branch is
+   **missing, still open, closed without merging, or merged against the wrong base**,
+   **stop and report those children and do not open the integration PR** — there is no
+   "proceed anyway". The epic ships only once every child's PR is merged into the epic branch,
+   so step 4 (which closes the epic and all children) is reached only when the work is
+   actually there.
 3. **Sync the epic branch with main.** Check out `epic/<n>-<slug>`, and merge the latest
    `main` into it so the PR diff is clean:
    ```bash
