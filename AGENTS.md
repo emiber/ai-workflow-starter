@@ -20,7 +20,7 @@ The full workflow lives in `workflow/`. Read, in order:
 The canonical list is in `workflow/rules.md`. The essential safety rules, inline so they're never missed:
 
 - Never merge or push to `main`. The flow ends with an open PR.
-- Never `git commit` or `git push` unless the user explicitly asks (running the work-issue flow counts as asking). Don't commit or push on your own initiative.
+- Never `git commit` or `git push` unless the user explicitly asks (running the `/work-issue` flow counts as asking). Don't commit or push on your own initiative.
 - Never commit secrets or credentials. Keep them in gitignored `.env` files; provide a `.env.example` with placeholder values.
 - Plan before non-trivial work, and ask when something is ambiguous — don't invent requirements.
 - Language: write all artifacts (code, comments, commits, branches, issues, PRs, docs) in English unless the user asks otherwise; reply in the language the user writes in.

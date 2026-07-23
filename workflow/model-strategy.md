@@ -40,6 +40,8 @@ Three ways, from least to most automatic:
 | `/create-issue` | issue capture | planning (Opus) |
 | `/refine-issue` | analysis and clarification | planning (Opus) |
 | `/work-issue` | implementation | execution (Sonnet) |
+| `/finish-epic` | epic integration | execution (Sonnet) |
+| `/review-pr` | read-only PR review | execution (Sonnet) |
 
 With `opusplan` active you don't have to think about this: the mode makes the switch at the right time.
 
