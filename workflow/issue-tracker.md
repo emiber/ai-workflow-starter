@@ -53,12 +53,45 @@ The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/a
 ### Parent/child (epics)
 
 Both trackers can group issues under an epic. The full model — including the integration
-branch — is in `workflow/epics.md`. The tracker-specific bit:
+branch — is in `workflow/epics.md`. This section is the **single source for the concrete
+parent/child commands**; other guides reference it instead of repeating the syntax.
 
-- **GitHub**: an epic is an issue with the `epic` label; children are linked as native
-  sub-issues via `gh api` (`gh` has no sub-issue subcommand). List epics with
-  `gh issue list --label epic --state open`; list an epic's children with
-  `gh api repos/{owner}/{repo}/issues/<epicN>/sub_issues --jq '.[].number'`.
+- **GitHub**: an epic is an issue with the `epic` label; children are native **sub-issues**.
+  Modern `gh` (**≥ 2.94**) has first-class commands for the relationship — prefer them:
+
+  ```bash
+  gh issue list --label epic --state open                  # list open epics
+  gh issue create --parent <epicN> --title "…" --body "…"  # create a child already linked
+  gh issue edit <epicN> --add-sub-issue <childN>           # link an existing issue as a child
+  gh issue edit <childN> --remove-parent                   # unlink a child
+  gh issue view <n> --json parent,subIssues,subIssuesSummary
+  #   .parent            → the epic this issue belongs to (null if standalone)
+  #   .subIssues.nodes[] → an epic's children (use .number)
+  #   .subIssuesSummary  → { total, completed, percentCompleted }
+  ```
+
+  **Fallback** (gh < 2.94, or GitHub Enterprise Server without these commands): use the REST
+  API via `gh api`. **Quote every path** — the `{owner}/{repo}` braces break unquoted in
+  PowerShell. All three operations have a fallback:
+
+  ```bash
+  # List an epic's children:
+  gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --jq '.[].number'
+
+  # Link a child — two shell-neutral steps (avoid Bash-only command substitution).
+  # 1) read the child's internal id (NOT its issue number):
+  gh api "repos/{owner}/{repo}/issues/<childN>" --jq '.id'
+  # 2) pass that id as <childId>:
+  gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" -F sub_issue_id=<childId>
+
+  # Detect a child's parent epic — read the parent reference from the issue payload
+  # (field name can vary by API version; adjust if empty):
+  gh api "repos/{owner}/{repo}/issues/<n>" --jq '.parent.number // .parent_issue_url // empty'
+  ```
+
+  Last resort for parent detection, if the payload exposes no parent field on your API
+  version: treat the issue as a child when it appears in some `epic`-labeled issue's
+  `sub_issues` list. Only use these when the native commands aren't available.
 - **Jira**: an epic is the native **Epic** issue type; children carry the **Epic Link /
   parent** field. No label convention needed.
 

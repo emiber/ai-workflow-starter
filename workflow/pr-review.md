@@ -1,6 +1,6 @@
 # PR review
 
-Guide for `/review-pr <n>`. Reviews an open PR against its linked issue's acceptance criteria and the Definition of Done from `workflow/git-flow.md`. The output is a structured report with **blockers** (must fix before merge) and **suggestions** (improvements worth considering).
+Guide for `/review-pr <n>`. Reviews an open PR against its linked issue(s)' acceptance criteria and the Definition of Done from `workflow/git-flow.md`. The output is a structured report with **blockers** (must fix before merge) and **suggestions** (improvements worth considering).
 
 This is a **read-only command**: it never commits, pushes, or modifies files.
 
@@ -15,6 +15,7 @@ Run these before anything else. They are read-only — if one fails, stop and re
 | Check | How | If it fails |
 |---|---|---|
 | `gh` authenticated | `gh auth status` | `gh auth login` |
+| `gh` supports `parent` (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or on older `gh` / GitHub Enterprise Server, read the linked issue's parent via the REST fallback in `workflow/issue-tracker.md`. Step 2 uses `parent` to classify the PR against its base branch. |
 | PR exists and is open | `gh pr view <n> --json state` | Report status and stop — if merged/closed, there is nothing to review. |
 
 ## Steps
@@ -25,7 +26,13 @@ Run these before anything else. They are read-only — if one fails, stop and re
 gh pr view <n> --json number,title,body,baseRefName,headRefName,state,additions,deletions,changedFiles,author
 ```
 
-Note the base branch — it should be `main` or an epic integration branch (`epic/<epicN>-<slug>`).
+**Classify the PR** from its head/base branches (and the linked issues' `parent`, from step 2). There are three valid shapes:
+
+- **Standalone** — feature branch → `main`; the linked issue has no `parent`; closed with `Closes`.
+- **Epic child** — feature branch → `epic/<epicN>-<slug>`; the linked issue's `parent` is that epic; referenced with `Refs`.
+- **Epic integration** — head `epic/<epicN>-<slug>` → base `main`; opened by `/finish-epic`. Its linked issues are the epic itself **plus** its children — the one explicit exception to "one PR = one issue" (see `workflow/epics.md`). Its child issues are correctly targeted here; do **not** flag them as mis-based.
+
+Anything that fits none of these (e.g. a child branch pointing at `main`, or a mixed set of unrelated issues) → flag for manual validation.
 
 ### 2. Find and fetch the linked issue(s)
 
@@ -37,8 +44,9 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   ```
   This is authoritative for a PR into the default branch that uses a closing keyword (`Closes`/`Fixes`/`Resolves #<n>`). If it returns nothing — the normal case for an **epic child PR** (non-default base, references its issue with `Refs`) or any link-only PR — fall back to scanning the PR body for **keyworded references only**: `Closes`/`Fixes`/`Resolves #<n>` and `Refs #<n>`. Collect **every** match; a PR may legitimately link more than one issue. A **bare `#<n>` with no keyword is not an authoritative link** — treat it at most as "possibly related", never as the reviewed issue. Fetch each resolved issue with:
   ```bash
-  gh issue view <issueN> --json title,body,labels,comments
+  gh issue view <issueN> --json title,body,labels,comments,parent
   ```
+  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) tells a child issue — part of an epic — from a standalone one, which the target-branch check in step 4 relies on.
 - **Jira**: look for a Jira key in the title or body (e.g. `[ABC-123]`). Fetch with:
   ```bash
   jira issue view <KEY>
@@ -64,7 +72,7 @@ Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail*
 | Tests exist for new components | For each new non-trivial file, look for a corresponding test file. A new component with no tests is a blocker. |
 | No secrets committed | Scan the diff for hardcoded credentials, tokens, API keys, or private keys. Any hit is a blocker. |
 | Docs updated if needed | If behavior, setup, or public interface changed, check that `README` / `docs/ARCHITECTURE.md` / inline docs were updated in the same PR. |
-| Target branch is correct | Standalone issue → `main`. Child of an epic → `epic/<epicN>-<slug>`. A wrong base branch is a blocker. |
+| Target branch is correct | Check against the PR type from step 1: **standalone** → base `main`; **epic child** → base `epic/<epicN>-<slug>`; **epic integration** (`epic/** → main`) → base `main` is correct and its child issues are **not** mis-targeted. A base that doesn't match the PR's type is a blocker. |
 | Linter and tests pass | Not verifiable from the diff alone — flag as **warn** and note that the author should confirm locally before requesting review. Escalate to blocker if there are obvious syntax or style violations in the diff. |
 | Coverage meets threshold | Not verifiable from the diff alone — flag as **warn** if new code paths have no visible tests. |
 
