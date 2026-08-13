@@ -29,7 +29,7 @@ Read the issue and list everything that isn't clear. Categories to check:
 
 ### 3. Ask
 
-Ask the user **all** the questions needed to close those ambiguities. In small groups. Don't proceed on assumptions. If the user answers "use your judgment", propose a concrete decision and confirm it.
+Ask the user **all** the questions needed to close those ambiguities. In small groups. Don't proceed on unconfirmed assumptions. If the user answers "use your judgment", propose a concrete decision and confirm it. Record any such confirmed judgment call in the issue's **Assumptions** section (see `docs/ISSUE_TEMPLATE.md`) so what the user originally stated remains separate from what you inferred and they confirmed. Also reflect each decision's effects in the relevant **Scope**, **Expected behavior**, **Data**, or **Acceptance criteria** section; **Assumptions** records provenance, not a substitute for implementable requirements.
 
 Apply Ponytail: don't inflate the scope. If the issue asks for something small, keep it small. Detect and flag over-engineering in the original request.
 

@@ -22,7 +22,7 @@ Run these **before touching anything**. They're read-only — if one fails, stop
 
 ### 1. Fetch and verify the issue
 
-Fetch the issue using the selected tracker and read its acceptance criteria. Verify
+Fetch the issue using the selected tracker and read the full refined issue, including its acceptance criteria and any confirmed assumptions. Verify
 that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refining
 it first; if the user insists, refine it minimally on the spot.
 
@@ -83,7 +83,8 @@ git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 ### 4. Implement
 
 - **Model**: this phase is implementation → use the execution model (Sonnet). See `workflow/model-strategy.md`. If you're coming from planning with Opus, switch with `/model sonnet` or let `opusplan` do it on its own.
-- Follow `workflow/principles.md`: the minimum that meets the issue's acceptance criteria.
+- **Get your bearings first.** Start from the issue's most concrete anchor and trace only the owning code path, its immediate callers and data flow, and the nearest tests. Stop exploring once you can state the expected behavior, the smallest plausible change, and a focused check that could disprove it. Keep this pass read-only; use plain reading and search, and don't add tooling for it.
+- Follow `workflow/principles.md`: the minimum that satisfies the full refined issue, including its acceptance criteria.
 - Keep the change scoped to this one issue: one PR = one issue. If you spot unrelated work, note it as a separate issue instead of expanding this PR.
 - Before writing non-trivial code, show the plan and wait for confirmation.
 - Never stage or commit secrets or credentials. Keep them in gitignored `.env` files; add placeholders to `.env.example` when config is needed.
@@ -137,7 +138,7 @@ gh pr create \
 
 An issue isn't done until all of these hold. Check them before opening the PR:
 
-- [ ] The issue's acceptance criteria are met.
+- [ ] All applicable requirements in the refined issue are met, including its acceptance criteria.
 - [ ] New components have unit tests; coverage meets the threshold in `docs/ARCHITECTURE.md` (default 85%).
 - [ ] Linter and tests pass locally.
 - [ ] No secrets or credentials committed.

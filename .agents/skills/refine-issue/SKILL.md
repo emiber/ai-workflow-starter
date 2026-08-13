@@ -10,7 +10,7 @@ Refine the target issue (its number on GitHub or key on Jira — provided as the
 1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/issue-refinement.md`, and `workflow/issue-tracker.md`.
 2. Resolve the issue tracker per `workflow/issue-tracker.md` — `.workflow-config` ships preset to GitHub, so only ask if it's missing. Make sure the tracker CLI is authenticated (`gh auth status` for GitHub, `jira me` for Jira).
 3. Fetch the issue and list its ambiguities: goal, scope, behavior, data, dependencies, acceptance criteria, non-functional.
-4. Ask the user the questions needed to close them, in small groups. Don't proceed on assumptions.
+4. Ask the user the questions needed to close them, in small groups. Don't proceed on unconfirmed assumptions. If the user delegates a decision, propose and confirm a concrete choice, record it under **Assumptions**, and reflect its effects in every applicable issue section.
 5. Write the refined issue following `docs/ISSUE_TEMPLATE.md` and update it with the tracker command. Mark it as refined (label on GitHub, comment/status on Jira).
 6. Confirm the result and suggest running the work-issue skill.
 
