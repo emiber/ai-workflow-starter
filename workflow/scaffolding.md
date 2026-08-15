@@ -7,9 +7,10 @@ Guide for `/init-project`. The goal is, through questions, to define the project
 Before starting the question flow, check whether `docs/ARCHITECTURE.md` already exists in the project root.
 
 - **If it exists:** show its contents to the user and ask:
-  > `docs/ARCHITECTURE.md` already exists. Do you want to (a) redo the design questions and overwrite it, or (b) skip to code generation using the existing file?
+  > `docs/ARCHITECTURE.md` already exists. Do you want to **(a)** redo the design questions and overwrite it, or **(b)** skip to code generation using the existing file?
   - Answer **a** → proceed with the full question flow below, then overwrite the file.
-  - Answer **b** → skip directly to **step 4b (Generation phase)** using the existing file as-is.
+  - Answer **b** → before entering 4b, do a quick sanity check of the file: warn the user if it contains any `_(pending)_` placeholders or is missing a coverage threshold, and ask them to fix those before continuing. Also warn: step 4b will regenerate all base files (README, `.gitignore`, `ci.yml`, etc.) from the existing `ARCHITECTURE.md` — any manual edits to those files will be overwritten. Confirm the user is aware before proceeding. If they confirm, skip directly to **step 4b**.
+  - **Any other answer** → re-ask with the same two options.
 - **If it does not exist:** proceed with the full question flow below.
 
 ## Question flow
@@ -78,9 +79,16 @@ After the question flow is complete:
 1. Summarize the chosen architecture in a short list (in chat).
 2. Write `docs/ARCHITECTURE.md` with the decisions (including deferred ones and why), plus the Quality gate (coverage threshold — default 85% — and how it's measured).
 3. **Stop.** Tell the user:
-   > `docs/ARCHITECTURE.md` has been written. Please review it and reply "continue" (or "proceed", "yes", etc.) when you're happy with the decisions — or tell me what to change.
+   > `docs/ARCHITECTURE.md` has been written. Review it and reply **"continue"** (or **"proceed"** / **"looks good"**) to generate the project files — or describe what you'd like to change.
 
-Do **not** generate any code, folders, or other files at this point. Wait for explicit confirmation before proceeding.
+Do **not** generate any code, folders, or other files at this point. Wait for an explicit positive reply before entering step 4b.
+
+**Handling the user's reply at this pause:**
+
+- **Positive reply** ("continue", "proceed", "looks good", "yes", "go ahead", "generate") → enter step 4b.
+- **Change request** ("change X to Y", "use MongoDB instead", etc.) → apply the change to `docs/ARCHITECTURE.md`, then **re-pause** with the same prompt. Do not advance to 4b automatically.
+- **Abort / restart** ("abort", "start over", "no", "cancel", "stop") → offer two options: restart from the question flow (go back to step 1, overwriting `ARCHITECTURE.md` at the end of the new flow) or stop entirely and leave the file as-is for later. Do not enter step 4b.
+- **Ambiguous reply** (a question, "interesting", "hmm", partial agreement with an open question) → answer or clarify, then re-display the pause prompt. Do not interpret ambiguous replies as confirmation.
 
 ### 4b. Generation phase — create the project files
 
