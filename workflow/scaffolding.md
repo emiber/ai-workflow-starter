@@ -100,6 +100,28 @@ Only after the user confirms (or after arriving here from the pre-check with an 
    - `.github/workflows/ci.yml` filled in for the chosen stack: on every PR to `main` or an epic integration branch (`epic/**`), run lint + tests and fail if coverage is below the threshold in `docs/ARCHITECTURE.md` (default 85%). Child PRs of an epic target `epic/**`, so they must be gated too (see `workflow/epics.md`); keep the `on.pull_request.branches` filter that ships with the template. Replace the placeholder guard step with real setup/install/lint/test steps, and rename the workflow back to `name: CI` and the job to a real name.
    - **No** dependencies or component folders that weren't confirmed.
 
+### 5. Enable branch protection on `main`
+
+After generation, protect `main` at the platform so the "never push/merge to `main`" rule is enforced by GitHub, not just by agent discipline (a direct push otherwise runs no CI and nothing blocks it). **Attempt** it automatically; never fail the whole scaffold if it can't be done.
+
+1. Determine the required CI check name — it is the **job name** set in `.github/workflows/ci.yml` (you renamed it from the template placeholder to a real name in step 4b). The required status check context must match it **exactly**, or the gate isn't enforced.
+2. Attempt to enable protection on `main` via `gh api` (classic branch protection shown; a ruleset works too):
+
+   ```bash
+   gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" --input - <<'JSON'
+   {
+     "required_status_checks": { "strict": true, "contexts": ["<CI job name>"] },
+     "enforce_admins": true,
+     "required_pull_request_reviews": { "required_approving_review_count": 0 },
+     "restrictions": null
+   }
+   JSON
+   ```
+
+   `required_approving_review_count: 0` requires a PR without locking out a solo maintainer (who can't approve their own PR); raise it for a team that wants mandatory review. `enforce_admins: true` blocks direct pushes to `main` even for admins — that is the point.
+3. **On failure — do not abort.** If the call fails (the repo isn't on GitHub yet, you lack admin, or the plan doesn't support protection), warn and print the exact manual steps instead of erroring out:
+   > Couldn't enable branch protection automatically. Enable it by hand: repo **Settings → Branches → Add branch ruleset** (or **Add rule**) for `main` — require a pull request before merging, require the status check **<CI job name>** to pass, and block direct pushes (including admins). See `workflow/README.md` "Getting started".
+
 ## Golden rule
 
 The generated scaffolding has to start and run (even if it's a "hello world" per component). Don't leave a skeleton that doesn't compile.
@@ -112,5 +134,6 @@ After scaffolding, do a quick, lightweight self-check (no extra tooling — just
 2. **`.workflow-config` is valid.** It has `issue_tracker=github` or `issue_tracker=jira` (and `jira_project=...` when Jira).
 3. **No leftover placeholders.** The root `README.md` no longer contains the "bootstrapped from the AI Workflow Starter" placeholder, and `docs/ARCHITECTURE.md` has real decisions instead of `_(pending)_`.
 4. **CI is initialized.** `.github/workflows/ci.yml` no longer has the "template not initialized" guard step and runs real lint/test/coverage.
+5. **Branch protection attempted.** `/init-project` tried to protect `main` (require a PR, require the CI check, block direct pushes) and either applied it or reported the manual steps — the required check name matches the `ci.yml` job name.
 
 Report anything still off; don't silently leave the template half-initialized.
