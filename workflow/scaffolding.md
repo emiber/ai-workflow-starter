@@ -2,6 +2,16 @@
 
 Guide for `/init-project`. The goal is, through questions, to define the project's components, suggest technologies, and generate the minimal base. Apply the principles in `principles.md`: don't propose components the project doesn't need.
 
+## Pre-check: existing ARCHITECTURE.md
+
+Before starting the question flow, check whether `docs/ARCHITECTURE.md` already exists in the project root.
+
+- **If it exists:** show its contents to the user and ask:
+  > `docs/ARCHITECTURE.md` already exists. Do you want to (a) redo the design questions and overwrite it, or (b) skip to code generation using the existing file?
+  - Answer **a** → proceed with the full question flow below, then overwrite the file.
+  - Answer **b** → skip directly to **step 4b (Generation phase)** using the existing file as-is.
+- **If it does not exist:** proceed with the full question flow below.
+
 ## Question flow
 
 Ask **one at a time or in small groups**, not all at once. After each answer, adjust the following questions.
@@ -61,14 +71,22 @@ For each confirmed component, **suggest options with a short reason and ask**. D
 
 Also ask about the user's preferences (language they know well, cloud they already use, client constraints). Their preferences win over the default suggestions.
 
-### 4. Confirmation and generation
+### 4a. Design phase — emit ARCHITECTURE.md and pause
 
-Before creating files:
+After the question flow is complete:
 
-1. Summarize the chosen architecture in a short list.
-2. Ask for explicit confirmation.
-3. Generate:
-   - `docs/ARCHITECTURE.md` with the decisions (including deferred ones and why), plus the Quality gate (coverage threshold — default 85% — and how it's measured).
+1. Summarize the chosen architecture in a short list (in chat).
+2. Write `docs/ARCHITECTURE.md` with the decisions (including deferred ones and why), plus the Quality gate (coverage threshold — default 85% — and how it's measured).
+3. **Stop.** Tell the user:
+   > `docs/ARCHITECTURE.md` has been written. Please review it and reply "continue" (or "proceed", "yes", etc.) when you're happy with the decisions — or tell me what to change.
+
+Do **not** generate any code, folders, or other files at this point. Wait for explicit confirmation before proceeding.
+
+### 4b. Generation phase — create the project files
+
+Only after the user confirms (or after arriving here from the pre-check with an existing `ARCHITECTURE.md`):
+
+1. Generate:
    - Minimal folder structure for the chosen components.
    - Base files: **extend** the baseline `.gitignore` that ships with the template with stack-specific entries (don't replace it — it already excludes `.env` and secrets), the project `README.md` (replace the placeholder root README with one describing the project — what it is and how to run it; leave `workflow/README.md` untouched), linter/formatter config, a test runner set up to report coverage, `.env.example` with the placeholder config your stack needs, `docker-compose.yml` if it applies, and the dependency manifest (`package.json` / `pyproject.toml` / etc.) with only what's needed.
    - `.github/workflows/ci.yml` filled in for the chosen stack: on every PR to `main` or an epic integration branch (`epic/**`), run lint + tests and fail if coverage is below the threshold in `docs/ARCHITECTURE.md` (default 85%). Child PRs of an epic target `epic/**`, so they must be gated too (see `workflow/epics.md`); keep the `on.pull_request.branches` filter that ships with the template. Replace the placeholder guard step with real setup/install/lint/test steps, and rename the workflow back to `name: CI` and the job to a real name.
