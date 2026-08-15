@@ -21,7 +21,8 @@ It gives you two things:
    ```
    /init-project
    ```
-5. **Work in the issue → PR loop** — create an issue (optional), refine it, then implement it:
+5. **Protect `main`** — `/init-project` attempts to enable branch protection on `main` automatically (require a PR, require CI to pass, block direct pushes). If it couldn't — the repo isn't on GitHub yet, or you lack admin — enable it by hand in repo **Settings → Branches**: add a rule for `main` that requires a pull request, requires the CI check to pass, and disallows direct pushes. This is what makes "never push to `main`" real instead of just a convention.
+6. **Work in the issue → PR loop** — create an issue (optional), refine it, then implement it:
    ```
    /create-issue "contacts list not paginating past page 2"
    /refine-issue 42
