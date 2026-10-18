@@ -5,13 +5,8 @@ description: Opens the integration PR (epic branch → main) when an epic's chil
 
 # /finish-epic
 
-You close out epic $ARGUMENTS by opening its integration PR, following the contract in `workflow/epics.md`.
+Follow the playbook in `.agents/skills/finish-epic/SKILL.md` — it's the single source for this command's steps, shared with Codex. The target epic is $ARGUMENTS (a number on GitHub, a key on Jira).
 
-1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/epics.md`, and `workflow/issue-tracker.md`. This wraps up implementation → the execution model (Sonnet) is fine.
-2. Run the preflight from `workflow/epics.md` (`/finish-epic` section). It's read-only — if one fails, stop and report the fix. It confirms `<n>` really is an epic and that its integration branch `epic/$ARGUMENTS-<slug>` exists.
-3. Fetch the epic and its children. A child is done when its PR into the epic branch is **merged** — the child *issue* may still be open (that's the recommended default). If any child's PR is missing, still open, closed without merging, or merged against the wrong base, **stop and report them and do not open the integration PR** — there is no "proceed anyway".
-4. Sync the epic branch with the latest `main` (merge `origin/main` into it, resolve conflicts, push). Never force-push the epic branch.
-5. Open the PR `epic/$ARGUMENTS-<slug> → main` with `gh pr create --base main`. Body aggregates `Closes #$ARGUMENTS` plus `Closes #<each child>` (GitHub) so merging closes the whole tree; on Jira, put the Epic key in the title and list child keys.
-6. **Don't merge.** Leave the PR open for human review and return its link.
-
-If any step fails, stop and report. Don't improvise destructive workarounds or use `--force`.
+Claude Code specifics:
+- This wraps up implementation → the execution model (Sonnet) is fine; see `workflow/model-strategy.md`.
+- Where the playbook says "the <name> skill", that's the `/<name>` command here.
