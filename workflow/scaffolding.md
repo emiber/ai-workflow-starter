@@ -9,7 +9,7 @@ Before starting the question flow, check whether `docs/ARCHITECTURE.md` already 
 - **If it exists:** show its contents to the user and ask:
   > `docs/ARCHITECTURE.md` already exists. Do you want to **(a)** redo the design questions and overwrite it, or **(b)** skip to code generation using the existing file?
   - Answer **a** → proceed with the full question flow below, then overwrite the file.
-  - Answer **b** → before entering 4b, do a quick sanity check of the file: warn the user if it contains any `_(pending)_` placeholders or is missing a coverage threshold, and ask them to fix those before continuing. Also warn: step 4b will regenerate all base files (README, `.gitignore`, `ci.yml`, etc.) from the existing `ARCHITECTURE.md` — any manual edits to those files will be overwritten. Confirm the user is aware before proceeding. If they confirm, skip directly to **step 4b**.
+  - Answer **b** → before entering 4b, do a quick sanity check of the file: warn the user if it contains any `_(pending)_` placeholders or is missing a coverage threshold or the Quality gate commands, and ask them to fix those before continuing. Also warn: step 4b will regenerate all base files (README, `.gitignore`, `ci.yml`, etc.) from the existing `ARCHITECTURE.md` — any manual edits to those files will be overwritten. Confirm the user is aware before proceeding. If they confirm, skip directly to **step 4b**.
   - **Any other answer** → re-ask with the same two options.
 - **If it does not exist:** proceed with the full question flow below.
 
@@ -77,7 +77,7 @@ Also ask about the user's preferences (language they know well, cloud they alrea
 After the question flow is complete:
 
 1. Summarize the chosen architecture in a short list (in chat).
-2. Write `docs/ARCHITECTURE.md` with the decisions (including deferred ones and why), plus the Quality gate (coverage threshold — default 85% — and how it's measured).
+2. Write `docs/ARCHITECTURE.md` with the decisions (including deferred ones and why), plus the Quality gate: coverage threshold (default 85%), how it's measured, and the exact **lint** and **test-with-coverage** commands. Those two commands are the single definition of the gate — CI runs them and `/work-issue` runs them before every PR.
 3. **Stop.** Tell the user:
    > `docs/ARCHITECTURE.md` has been written. Review it and reply **"continue"** (or **"proceed"** / **"looks good"**) to generate the project files — or describe what you'd like to change.
 
@@ -97,7 +97,7 @@ Only after the user confirms (or after arriving here from the pre-check with an 
 1. Generate:
    - Minimal folder structure for the chosen components.
    - Base files: **extend** the baseline `.gitignore` that ships with the template with stack-specific entries (don't replace it — it already excludes `.env` and secrets), the project `README.md` (replace the placeholder root README with one describing the project — what it is and how to run it; leave `workflow/README.md` untouched), linter/formatter config, a test runner set up to report coverage, `.env.example` with the placeholder config your stack needs, `docker-compose.yml` if it applies, and the dependency manifest (`package.json` / `pyproject.toml` / etc.) with only what's needed.
-   - `.github/workflows/ci.yml` filled in for the chosen stack: on every PR to `main` or an epic integration branch (`epic/**`), run lint + tests and fail if coverage is below the threshold in `docs/ARCHITECTURE.md` (default 85%). Child PRs of an epic target `epic/**`, so they must be gated too (see `workflow/epics.md`); keep the `on.pull_request.branches` filter that ships with the template. Replace the placeholder guard step with real setup/install/lint/test steps, and rename the workflow back to `name: CI` and the job to a real name.
+   - `.github/workflows/ci.yml` filled in for the chosen stack: on every PR to `main` or an epic integration branch (`epic/**`), run lint + tests and fail if coverage is below the threshold in `docs/ARCHITECTURE.md` (default 85%). Child PRs of an epic target `epic/**`, so they must be gated too (see `workflow/epics.md`); keep the `on.pull_request.branches` filter that ships with the template. Replace the placeholder guard step with real setup/install steps plus the lint and test-with-coverage commands recorded in `docs/ARCHITECTURE.md` (the same commands, not variants), and rename the workflow back to `name: CI` and the job to a real name. Leave `.github/workflows/workflow-check.yml` as is — it checks the workflow files, not the stack.
    - **No** dependencies or component folders that weren't confirmed.
 
 ### 5. Enable branch protection on `main`
@@ -130,10 +130,9 @@ The generated scaffolding has to start and run (even if it's a "hello world" per
 
 After scaffolding, do a quick, lightweight self-check (no extra tooling — just verify, and fix what's off):
 
-1. **Referenced files exist.** Every `workflow/*.md` and doc referenced by `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` (including `workflow/rules.md`), plus the command/skill definitions under `.claude/commands/` and `.agents/skills/`, are present.
-2. **`.workflow-config` is valid.** It has `issue_tracker=github` or `issue_tracker=jira` (and `jira_project=...` when Jira).
-3. **No leftover placeholders.** The root `README.md` no longer contains the "bootstrapped from the AI Workflow Starter" placeholder, and `docs/ARCHITECTURE.md` has real decisions instead of `_(pending)_`.
-4. **CI is initialized.** `.github/workflows/ci.yml` no longer has the "template not initialized" guard step and runs real lint/test/coverage.
-5. **Branch protection attempted.** `/init-project` tried to protect `main` (require a PR, require the CI check, block direct pushes) and either applied it or reported the manual steps — the required check name matches the `ci.yml` job name.
+1. **Workflow files are consistent.** Run `bash .github/scripts/check-workflow.sh` (the same check CI runs). It verifies that every command has its skill and delegates to it, that every guide referenced by the entry files, commands, skills, and `workflow/` exists, that every command is listed in the entry files, and that `.workflow-config` is valid (`issue_tracker=github`, or `jira` with `jira_project=...`). Fix whatever it reports. If `bash` isn't available (e.g. Windows without Git Bash), do those same checks by hand and say so.
+2. **No leftover placeholders.** The root `README.md` no longer contains the "bootstrapped from the AI Workflow Starter" placeholder, and `docs/ARCHITECTURE.md` has real decisions — including the Quality gate commands — instead of `_(pending)_`.
+3. **CI is initialized.** `.github/workflows/ci.yml` no longer has the "template not initialized" guard step and runs the Quality gate commands from `docs/ARCHITECTURE.md`.
+4. **Branch protection attempted.** `/init-project` tried to protect `main` (require a PR, require the CI check, block direct pushes) and either applied it or reported the manual steps — the required check name matches the `ci.yml` job name.
 
 Report anything still off; don't silently leave the template half-initialized.

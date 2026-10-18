@@ -7,16 +7,18 @@ in VS Code via *prompt files* (`.github/prompts/*.prompt.md`, invoked as `/name`
 and the Copilot CLI ships built-in ones (`/model`, `/context`, ...) plus a plan
 mode, custom agents, and skills. What this starter does *not* ship is Copilot
 prompt files for its own commands: `/init-project`, `/create-issue`,
-`/refine-issue`, `/work-issue`, `/finish-epic`, and `/review-pr` are defined
-only under `.claude/commands/` (Claude Code format).
+`/refine-issue`, `/work-issue`, `/finish-epic`, and `/review-pr` have their
+steps in `.agents/skills/<name>/SKILL.md` (the playbooks shared by Codex and
+the Claude Code commands under `.claude/commands/`).
 
 So with Copilot you have two options:
 
 - **Natural language** (works everywhere): ask "refine issue 42" or "work on
-  issue 42" and follow the steps in the matching `workflow/` file.
+  issue 42" and follow the matching `.agents/skills/<name>/SKILL.md` playbook
+  and the `workflow/` file it points to.
 - **Add prompt files** (optional): create `.github/prompts/refine-issue.prompt.md`
-  and friends that point to the same `workflow/` guides, to get real
-  `/refine-issue` slash commands in VS Code.
+  and friends that point to the same playbooks, to get real `/refine-issue`
+  slash commands in VS Code.
 
 Read, in order:
 

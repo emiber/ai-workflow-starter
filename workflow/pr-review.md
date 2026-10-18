@@ -4,6 +4,18 @@ Guide for `/review-pr <n>`. Reviews an open PR against its linked issue(s)' acce
 
 This is a **read-only command**: it never commits, pushes, or modifies files.
 
+The same contract runs in two modes: against an **open PR** (`/review-pr <n>`, steps below) and in **local diff mode**, the self-review `/work-issue` runs before a PR exists (`workflow/git-flow.md` step 5).
+
+## Local diff mode (self-review before the PR)
+
+Same checks, different inputs. You're given an issue number and a base branch:
+
+- **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, `epic/<epicN>-<slug>` → epic child.
+- **Linked issue** = the issue you were given; fetch it with step 2's commands.
+- **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
+- **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
+- **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
+
 ## Before starting: resolve the tracker
 
 Determine whether the project uses GitHub or Jira following `workflow/issue-tracker.md` (check `.workflow-config`). The issue is fetched from the configured tracker; the PR is always on GitHub.
@@ -62,6 +74,8 @@ gh pr diff <n>
 
 Read all changed files and understand what the PR actually does.
 
+Then write the **PR intent** in one line: what the change is for and what it deliberately leaves alone (take it from the linked issue's Scope). It's the ruler for every scope call below: a real defect *inside* the intent can block; a valid concern *outside* it is a suggestion or a follow-up, never a reason to expand the PR.
+
 ### 4. Check the Definition of Done
 
 Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail** (blocker), or **warn** (unverifiable from diff alone).
@@ -70,15 +84,37 @@ Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail*
 |---|---|
 | Acceptance criteria met | Compare the diff against each AC in every linked issue (see step 2); verify each one has corresponding code or is not applicable. Missing coverage of an AC is a blocker. |
 | Tests exist for new components | For each new non-trivial file, look for a corresponding test file. A new component with no tests is a blocker. |
-| No secrets committed | Scan the diff for hardcoded credentials, tokens, API keys, or private keys. Any hit is a blocker. |
+| Security checklist | Apply the [Security checklist](#security-checklist) below. Any blocker it lists — including a committed secret — is a blocker. |
 | Docs updated if needed | If behavior, setup, or public interface changed, check that `README` / `docs/ARCHITECTURE.md` / inline docs were updated in the same PR. |
 | Target branch is correct | Check against the PR type from step 1: **standalone** → base `main`; **epic child** → base `epic/<epicN>-<slug>`; **epic integration** (`epic/** → main`) → base `main` is correct and its child issues are **not** mis-targeted. A base that doesn't match the PR's type is a blocker. |
 | Linter and tests pass | Not verifiable from the diff alone — flag as **warn** and note that the author should confirm locally before requesting review. Escalate to blocker if there are obvious syntax or style violations in the diff. |
-| Coverage meets threshold | Not verifiable from the diff alone — flag as **warn** if new code paths have no visible tests. |
+| Coverage meets threshold | Not verifiable from the diff alone — flag as **warn** if new code paths have no visible tests, or if Verification lists new/changed files below the threshold without a reason. |
+| Verification reported | The PR body has a **Verification** section with a line for every gate in `workflow/git-flow.md` (lint, tests, coverage, self-review, security, docs), each pass or `n/a` with a reason, plus an **Out of scope / follow-ups** section. Missing section or missing gates → **warn**. A gate reported as passed that the diff contradicts (e.g. "tests: pass" with a test file deleted) → blocker. Not applicable to an epic integration PR (its children carry it). |
+
+Plan approval and the self-review leave no trace in the diff; the Verification section's self-review line is the only evidence of the latter — don't mark either as pass or fail on your own.
+
+#### Security checklist
+
+Applies to every review. First decide whether the diff touches a **security surface**: entry points (HTTP routes, handlers, CLI arguments, message consumers), authentication or permissions, data access, file handling, outbound calls, configuration or secrets, logging of user data. If it touches none, write one line — "Security: no security surface touched" — and move on; don't invent findings.
+
+Otherwise, check each area. These are **blockers**:
+
+| Area | Blocker when |
+|---|---|
+| Authorization | A new or changed entry point that reads or changes data has no server-side authorization check, or relies only on the client/UI to hide it. |
+| Secrets | A credential, token, API key, private key, or connection string appears in code, config, tests, fixtures, or the PR text. |
+| Input | Input from outside the process isn't validated at the boundary, or a query or shell command is built by concatenating that input instead of using parameters. |
+| Data exposure | Responses, errors, or logs expose internals (stack traces, tokens, connection strings) or personal data beyond what the feature needs, or return whole internal records where a narrower shape is expected. |
+
+Other concerns — an outbound call without a timeout, an unverified incoming webhook, a new dependency with a doubtful track record — are **suggestions**, unless they open a concrete exploit path; then they're blockers. For each finding give the file and line, the risk in one line, and the fix.
 
 ### 5. Report
 
 Output a structured review with the following sections:
+
+#### Intent
+
+The one-line PR intent from step 3.
 
 #### Blockers
 

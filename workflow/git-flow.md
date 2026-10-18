@@ -34,7 +34,7 @@ not a guess:
 - **Jira**: it has an Epic Link / parent field.
 
 If it does, this is a child of an epic and uses the **integration-branch flow** — steps 3
-and 5 change as noted below (see `workflow/epics.md`). If it has no parent, the flow is
+and 6 change as noted below (see `workflow/epics.md`). If it has no parent, the flow is
 exactly as written.
 
 ### 2. Pull the latest main
@@ -84,9 +84,16 @@ git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 
 - **Model**: this phase is implementation → use the execution model (Sonnet). See `workflow/model-strategy.md`. If you're coming from planning with Opus, switch with `/model sonnet` or let `opusplan` do it on its own.
 - **Get your bearings first.** Start from the issue's most concrete anchor and trace only the owning code path, its immediate callers and data flow, and the nearest tests. Stop exploring once you can state the expected behavior, the smallest plausible change, and a focused check that could disprove it. Keep this pass read-only; use plain reading and search, and don't add tooling for it.
+- **Plan approval — before writing any code.** Post the plan in the chat and wait for the user's explicit approval ("go ahead", "approved", …). A question or a vague comment is not approval: answer it and ask again. The plan covers:
+  - **Understanding** — the goal and each acceptance criterion, one line each.
+  - **Files** — what you'll create or change.
+  - **Steps** — in order.
+  - **Test plan** — the tests you'll add or update, and the edge cases they cover.
+  - **Open questions** — anything that blocks correctness. Ask instead of guessing.
+
+  A **trivial** change (a typo, a one-line fix, a docs tweak with no behavior change) skips the full plan: state the change in one sentence and get a yes. If the user adjusts the plan, implement the adjusted version.
 - Follow `workflow/principles.md`: the minimum that satisfies the full refined issue, including its acceptance criteria.
-- Keep the change scoped to this one issue: one PR = one issue. If you spot unrelated work, note it as a separate issue instead of expanding this PR.
-- Before writing non-trivial code, show the plan and wait for confirmation.
+- Keep the change scoped to this one issue: one PR = one issue. If you spot unrelated work, don't expand this PR: list it under **Out of scope / follow-ups** in the PR body and offer it as an issue in step 7.
 - Never stage or commit secrets or credentials. Keep them in gitignored `.env` files; add placeholders to `.env.example` when config is needed.
 - Small, descriptive commits. Suggested format (Conventional Commits):
 
@@ -97,9 +104,23 @@ Refs #<n>
 ```
 
 - Every new component ships with unit tests, and test coverage must meet the threshold in `docs/ARCHITECTURE.md` (default 85% — see `workflow/principles.md`).
-- Run the linter and tests locally before the PR, and verify coverage meets that threshold. If something fails or coverage is below it, fix it before opening the PR.
+- **Run the quality gate locally**: the lint and test-with-coverage commands recorded in the **Quality gate** section of `docs/ARCHITECTURE.md` — the same ones CI runs. If the file doesn't list them (a project initialized before they were recorded), detect them from the project (package scripts, `pyproject.toml`, `.github/workflows/ci.yml`), use them, and propose recording them as a follow-up (step 7). If something fails or coverage is below the threshold, fix it before going on.
+- **Check the coverage of what you touched**, not just the total: a change can keep the global number above the threshold while its own new code is barely tested. List any new or changed source file below the threshold in the PR's **Verification** section, and add tests unless there's a real reason (say which).
 
-### 5. Push and PR
+### 5. Self-review — before the PR
+
+With the quality gate green and the work committed, get an independent review before anyone else sees the change. Your context is full of your own assumptions; a reviewer that sees only the issue and the diff catches what they hide.
+
+1. **Review in a clean context.** Start a fresh agent (on Claude Code, a subagent on the execution model) and give it only: the issue number, the base branch (`main`, or `epic/<epicN>-<slug>` for an epic child), and the instruction to review `git diff <base>...HEAD` following `workflow/pr-review.md` in **local diff mode**. Don't pass your plan or your reasoning. It reports; it doesn't edit. If you can't start a separate agent, run the same review yourself and say so in Verification ("inline").
+2. **Triage what comes back:**
+   - **Blockers** → fix them, commit the fixes (the review only sees committed work), re-run the quality gate, and run the review **once more**. If blockers remain after that second review, stop: don't open the PR — report them to the user with your proposed way forward.
+   - **Suggestions** within the issue's scope → apply the cheap, clearly-right ones; list the rest on the Self-review line of the PR's Verification section.
+   - Anything **outside the issue's scope** → a follow-up (step 7), not a change to this PR.
+3. Record the outcome on the **Self-review** line of the PR's Verification section.
+
+A **trivial** change (see step 4) may skip the separate agent: check the diff against the same contract inline and note it in Verification.
+
+### 6. Push and PR
 
 The PR always goes to GitHub. Two things depend on whether the issue has a parent epic:
 the **base branch** and the **issue reference**.
@@ -125,11 +146,31 @@ gh pr create \
 ## What it does
 ...
 
-## How it was tested
-..."
+## Verification
+- Lint: <command> — pass
+- Tests: <command> — pass
+- Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason>
+- Self-review: <blockers found and fixed, or none>; suggestions not applied: <list, or none> (separate agent | inline)
+- Security: pass | no security surface touched
+- Docs: updated <files> | not needed (<reason>)
+
+## Out of scope / follow-ups
+None | - <item>"
 ```
 
-### 6. Closing
+A long body is easier to pass with `--body-file <file>` (and avoids shell-quoting trouble, especially in PowerShell).
+
+**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
+
+### 7. Offer follow-ups
+
+If the work surfaced **real** loose ends — unrelated bugs you noticed, scope deliberately left out, self-review findings outside the issue's scope, a deliberate TODO — list them and **offer** to create them as issues. Nothing is created until the user approves; they may edit or drop items.
+
+- Create each approved item following `workflow/issue-creation.md` (it checks for duplicates first), referencing the source: `Follow-up of #<n>`. For a child of an epic, ask whether the follow-up belongs under the same epic.
+- Then update the PR's **Out of scope / follow-ups** section with the new issue numbers (`gh pr edit <pr> --body-file <file>`).
+- No real loose ends → say so and skip. Never invent follow-ups to look thorough.
+
+### 8. Closing
 
 - **Don't merge.** Leave the PR open for human review.
 - Return the PR link to the user.
@@ -139,10 +180,13 @@ gh pr create \
 An issue isn't done until all of these hold. Check them before opening the PR:
 
 - [ ] All applicable requirements in the refined issue are met, including its acceptance criteria.
-- [ ] New components have unit tests; coverage meets the threshold in `docs/ARCHITECTURE.md` (default 85%).
-- [ ] Linter and tests pass locally.
-- [ ] No secrets or credentials committed.
+- [ ] The plan was approved before implementing (or the change was confirmed as trivial).
+- [ ] New components have unit tests; coverage meets the threshold in `docs/ARCHITECTURE.md` (default 85%), and any new or changed file below it is listed in Verification with the reason.
+- [ ] Linter and tests pass locally, using the Quality gate commands in `docs/ARCHITECTURE.md`.
+- [ ] The self-review (step 5) left no unresolved blockers.
+- [ ] No secrets or credentials committed, and the change passes the Security checklist in `workflow/pr-review.md` (or touches no security surface).
 - [ ] Docs updated if behavior or setup changed (`README` / `ARCHITECTURE` / etc.).
+- [ ] The PR body's **Verification** section reports every gate — pass, or `n/a` with the reason — and **Out of scope / follow-ups** lists what was left out (or "None").
 - [ ] PR opened and left open for review (not merged) — against `main`, or against the epic's integration branch if the issue is a child of an epic (see `workflow/epics.md`).
 
 ## Hard rules

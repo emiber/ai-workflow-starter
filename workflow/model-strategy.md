@@ -42,8 +42,11 @@ Three ways, from least to most automatic:
 | `/work-issue` | implementation | execution (Sonnet) |
 | `/finish-epic` | epic integration | execution (Sonnet) |
 | `/review-pr` | read-only PR review | execution (Sonnet) |
+| self-review inside `/work-issue` | read-only review subagent, clean context | execution (Sonnet) |
 
 With `opusplan` active you don't have to think about this: the mode makes the switch at the right time.
+
+One nuance: `opusplan` uses Opus only while you're in **plan mode**. The implementation plan that `/work-issue` posts for your approval is drafted by the execution model unless you switch to plan mode (Shift+Tab) for that step — worth doing for a non-trivial issue.
 
 ## Cost note
 

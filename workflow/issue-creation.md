@@ -31,7 +31,20 @@ short body:
 Ask only what's missing — one or two questions, not the full refinement
 interrogation. If the user gives a one-liner and says "just create it", create it.
 
-### 2. Assess size and placement (epics)
+### 2. Check for duplicates
+
+Before drafting, search the open issues for the same problem, using two or three key
+words from the request:
+
+- **GitHub**: `gh issue list --state open --search "<key words>"`
+- **Jira**: `jira issue list -q 'summary ~ "<key words>" AND statusCategory != Done'`
+
+If one plausibly matches, show it and ask: add the new context to the existing issue
+(a comment), or create a new one anyway (and mention the related issue in its body).
+Never decide silently. No match → carry on. This applies to every issue this workflow
+creates, including the follow-ups `/work-issue` offers (`workflow/git-flow.md` step 7).
+
+### 3. Assess size and placement (epics)
 
 Two quick checks before drafting. Both are **propose-and-confirm** — never decide the
 structure silently, and never invent a parent. See `workflow/epics.md` for the how.
@@ -56,7 +69,7 @@ structure silently, and never invent a parent. See `workflow/epics.md` for the h
 If neither applies (a plain, self-contained issue with no matching epic), skip this and
 carry on — this is the common case.
 
-### 3. Draft the issue
+### 4. Draft the issue
 
 Write a concise issue:
 
@@ -67,14 +80,14 @@ Write a concise issue:
 
 Show the draft (title + body) to the user and confirm before creating.
 
-### 4. Create it in the tracker
+### 5. Create it in the tracker
 
 - **GitHub**: `gh issue create --title "<title>" --body-file <file>` (add
   `--label <type>` if the project uses type labels). Returns the issue URL/number.
 - **Jira**: `jira issue create` with the summary, description, and the project's
   issue type. Returns the key.
 
-If step 2 decided this is an **epic** or a **child**, apply the hierarchy now
+If step 3 decided this is an **epic** or a **child**, apply the hierarchy now
 (details in `workflow/epics.md`):
 
 - **Epic**: add the `epic` label on GitHub (`--label epic`) / create it as an Epic type
@@ -82,7 +95,7 @@ If step 2 decided this is an **epic** or a **child**, apply the hierarchy now
 - **Child**: after creating it, link it to its parent — GitHub sub-issue / Jira Epic Link
   (commands in `workflow/issue-tracker.md`) — and confirm the link took.
 
-### 5. Output
+### 6. Output
 
 Confirm with the issue number/key and its URL. Suggest `/refine-issue <n>` to make it
 implementable, then `/work-issue <n>` to build it.

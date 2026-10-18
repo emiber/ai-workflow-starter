@@ -5,15 +5,9 @@ description: Implements a refined issue following the git flow main → branch �
 
 # /work-issue
 
-You implement issue $ARGUMENTS following the contract in `workflow/git-flow.md`.
+First read `.agents/skills/work-issue/SKILL.md`, then follow it step by step — it's the single source for this command's steps, shared with Codex. The target issue is $ARGUMENTS (a number on GitHub, a key on Jira).
 
-1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/git-flow.md`, `workflow/epics.md`, `workflow/model-strategy.md`, and `workflow/issue-tracker.md`. This is the implementation phase → use the execution model (Sonnet). If you're not on `opusplan`, switch with `/model sonnet`.
-2. Run the full **Preflight checks** from `workflow/git-flow.md` before touching anything. They're read-only — if one fails, stop and report the fix. These include `gh` auth and resolving the issue tracker (GitHub/Jira) per `workflow/issue-tracker.md`.
-3. With the tracker resolved, fetch and read the full refined issue $ARGUMENTS, including its acceptance criteria and confirmed assumptions, then verify that it is refined. Check whether it has a **parent epic** (per `workflow/epics.md`) — that changes the base branch in steps 5 and 7. If it isn't refined, suggest `/refine-issue $ARGUMENTS`; if the user insists, refine it minimally on the spot.
-4. Pull the latest main (`git checkout main && git pull --ff-only`).
-5. Create the working branch `<type>/$ARGUMENTS-<slug>`. No parent → cut from `main`. Child of an epic → cut from the epic's integration branch `epic/<epicN>-<slug>`, creating it lazily from `main` if this is the first child (see `workflow/epics.md`).
-6. Get your bearings first: start from the issue's most concrete anchor and trace only the owning path and nearest tests until you can state the expected behavior, smallest plausible change, and a focused check. Then implement the minimum that satisfies the full refined issue, including its acceptance criteria. Show the plan before writing non-trivial code. Small commits.
-7. Run the linter and tests. Push and create the PR with `gh pr create --base <main | epic/<epicN>-<slug>>`. Issue reference: `Closes #$ARGUMENTS` (standalone) or `Refs #$ARGUMENTS` (child of an epic — it's closed later by `/finish-epic`) on GitHub, or the key `[$ARGUMENTS]` in the title/body if it's Jira.
-8. **Don't merge.** Return the PR link. If this was the last child of an epic, suggest `/finish-epic <epicN>`.
-
-If any step fails, stop the flow and report. Don't improvise destructive workarounds or use `--force`.
+Claude Code specifics:
+- This is the implementation phase → use the execution model (Sonnet); see `workflow/model-strategy.md`. If you're not on `opusplan`, switch with `/model sonnet`.
+- The self-review runs in a fresh subagent (Agent tool) that gets only the issue, the base branch, and the review instructions — not your plan or reasoning.
+- Where the playbook says "the <name> skill", that's the `/<name>` command here.

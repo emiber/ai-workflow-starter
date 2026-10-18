@@ -21,10 +21,12 @@ You plan with Opus and implement with Sonnet (see `workflow/model-strategy.md`).
 
 ## Available commands
 
+Each command is a thin wrapper: its steps live in the matching playbook, `.agents/skills/<name>/SKILL.md` (shared with Codex).
+
 - `/init-project` — interactive scaffolding of a new project. Reads `workflow/scaffolding.md`.
 - `/create-issue <description>` — creates a new issue in the tracker from a description; may create it as an epic or nest it under an existing one. Reads `workflow/issue-creation.md` and `workflow/epics.md`.
 - `/refine-issue <n>` — refines and clarifies an issue. Reads `workflow/issue-refinement.md`.
-- `/work-issue <n>` — implements a refined issue following the git flow. Child issues of an epic target the epic's integration branch. Reads `workflow/git-flow.md` and `workflow/epics.md`.
+- `/work-issue <n>` — implements a refined issue following the git flow: plan approval, implementation, quality gate, self-review in a fresh subagent, PR with a Verification section, and follow-ups offered. Child issues of an epic target the epic's integration branch. Reads `workflow/git-flow.md`, `workflow/epics.md`, and `workflow/pr-review.md`.
 - `/finish-epic <n>` — opens the integration PR (epic branch → `main`) when an epic's children are done. Reads `workflow/epics.md`.
 - `/review-pr <n>` — reviews an open PR against its linked issue(s)' acceptance criteria and the Definition of Done. Read-only: never commits or pushes. Reads `workflow/pr-review.md`.
 
