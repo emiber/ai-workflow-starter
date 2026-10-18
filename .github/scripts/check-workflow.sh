@@ -7,6 +7,10 @@
 # CI runs it on every PR (.github/workflows/workflow-check.yml); /init-project runs
 # it in its integrity check. Prints one error per problem and exits 1 if any.
 #
+# Projects created from the starter keep this check on purpose: a command you add
+# needs its playbook in .agents/skills/ and a line in the entry files, like the
+# built-in ones, and a guide you reference must exist.
+#
 # Bash builtins only, on purpose: spawning processes is very slow in Git Bash on
 # Windows, and this must stay quick to run locally there too (bash 3.2+).
 set -uo pipefail
@@ -28,7 +32,9 @@ read_file() {
   printf -v "$2" '%s' "$_buf"
 }
 
-# frontmatter_name <path>: sets $fm_name to the frontmatter's `name:` value.
+# frontmatter_name <path>: sets $fm_name to the frontmatter's `name:` value
+# (surrounding quotes and trailing spaces ignored, as YAML does).
+name_re="^name:[[:space:]]*[\"']?([^\"'[:space:]]*)"
 frontmatter_name() {
   local line first=1
   fm_name=""
@@ -40,7 +46,7 @@ frontmatter_name() {
       continue
     fi
     [ "$line" = "---" ] && return 0
-    if [[ $line =~ ^name:[[:space:]]*(.*)$ ]]; then
+    if [[ $line =~ $name_re ]]; then
       fm_name=${BASH_REMATCH[1]}
       return 0
     fi

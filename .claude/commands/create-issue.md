@@ -5,7 +5,7 @@ description: Creates a new issue (GitHub or Jira) from a description, asking onl
 
 # /create-issue
 
-Follow the playbook in `.agents/skills/create-issue/SKILL.md` — it's the single source for this command's steps, shared with Codex. The issue to create is described in $ARGUMENTS (if empty, ask what it's about).
+First read `.agents/skills/create-issue/SKILL.md`, then follow it step by step — it's the single source for this command's steps, shared with Codex. The issue to create is described in $ARGUMENTS (if empty, ask what it's about).
 
 Claude Code specifics:
 - This is a pre-implementation task → the planning model (Opus) is fine; see `workflow/model-strategy.md`. If you're not on `opusplan`, `/model opus`.

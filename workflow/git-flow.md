@@ -113,8 +113,8 @@ With the quality gate green and the work committed, get an independent review be
 
 1. **Review in a clean context.** Start a fresh agent (on Claude Code, a subagent on the execution model) and give it only: the issue number, the base branch (`main`, or `epic/<epicN>-<slug>` for an epic child), and the instruction to review `git diff <base>...HEAD` following `workflow/pr-review.md` in **local diff mode**. Don't pass your plan or your reasoning. It reports; it doesn't edit. If you can't start a separate agent, run the same review yourself and say so in Verification ("inline").
 2. **Triage what comes back:**
-   - **Blockers** → fix them, re-run the quality gate, and run the review **once more**. If blockers remain after that second review, stop: don't open the PR — report them to the user with your proposed way forward.
-   - **Suggestions** within the issue's scope → apply the cheap, clearly-right ones; mention the rest in the PR.
+   - **Blockers** → fix them, commit the fixes (the review only sees committed work), re-run the quality gate, and run the review **once more**. If blockers remain after that second review, stop: don't open the PR — report them to the user with your proposed way forward.
+   - **Suggestions** within the issue's scope → apply the cheap, clearly-right ones; list the rest on the Self-review line of the PR's Verification section.
    - Anything **outside the issue's scope** → a follow-up (step 7), not a change to this PR.
 3. Record the outcome on the **Self-review** line of the PR's Verification section.
 
@@ -150,7 +150,7 @@ gh pr create \
 - Lint: <command> — pass
 - Tests: <command> — pass
 - Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason>
-- Self-review: <blockers found and fixed, or none> (separate agent | inline)
+- Self-review: <blockers found and fixed, or none>; suggestions not applied: <list, or none> (separate agent | inline)
 - Security: pass | no security surface touched
 - Docs: updated <files> | not needed (<reason>)
 

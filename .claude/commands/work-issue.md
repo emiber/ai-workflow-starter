@@ -5,7 +5,7 @@ description: Implements a refined issue following the git flow main → branch �
 
 # /work-issue
 
-Follow the playbook in `.agents/skills/work-issue/SKILL.md` — it's the single source for this command's steps, shared with Codex. The target issue is $ARGUMENTS (a number on GitHub, a key on Jira).
+First read `.agents/skills/work-issue/SKILL.md`, then follow it step by step — it's the single source for this command's steps, shared with Codex. The target issue is $ARGUMENTS (a number on GitHub, a key on Jira).
 
 Claude Code specifics:
 - This is the implementation phase → use the execution model (Sonnet); see `workflow/model-strategy.md`. If you're not on `opusplan`, switch with `/model sonnet`.

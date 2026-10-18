@@ -83,7 +83,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 - **One PR = one issue.** Changes stay small and focused; unrelated work becomes its own issue — `/work-issue` offers to create those follow-ups (only with your approval, after checking for duplicates).
 - **Epics for big work.** Work too large for one PR becomes an epic (a parent issue). Its children each merge into a shared integration branch, and the whole epic ships to `main` via one PR opened with `/finish-epic` (see `workflow/epics.md`).
 - **Docs travel with code.** Behavior or setup changes update the docs in the same PR.
-- **CI enforces the gate.** A GitHub Actions workflow runs lint + tests + the coverage threshold (default 85%) on every PR, using the commands recorded in `docs/ARCHITECTURE.md` (`/init-project` fills it in for your stack). A second workflow checks the workflow files themselves (commands ↔ skills, referenced guides, listings).
+- **CI enforces the gate.** A GitHub Actions workflow runs lint + tests + the coverage threshold (default 85%) on every PR, using the commands recorded in `docs/ARCHITECTURE.md` (`/init-project` fills it in for your stack). A second workflow checks the workflow files themselves (commands ↔ skills, referenced guides, listings); it stays in your project, so a command you add needs its playbook in `.agents/skills/` and a line in the entry files, like the built-in ones.
 
 ## Structure
 
