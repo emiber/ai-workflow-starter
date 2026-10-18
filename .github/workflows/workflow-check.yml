@@ -1,0 +1,21 @@
+name: Workflow integrity
+
+# Checks the AI workflow files themselves (commands, skills, guides, entry files),
+# not the project's stack. Kept as-is by /init-project; see workflow/scaffolding.md.
+on:
+  pull_request:
+    branches:
+      - main
+      - "epic/**"
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-integrity:
+    name: Workflow integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check commands, skills, and guide references
+        run: bash .github/scripts/check-workflow.sh

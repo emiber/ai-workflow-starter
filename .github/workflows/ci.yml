@@ -38,6 +38,10 @@ jobs:
       #   - run: pytest --cov --cov-fail-under=85
       # ──────────────────────────────────────────────────────────────────────
       - name: Quality gate not configured
+        # The starter repo itself has no stack to test, so the guard is skipped there;
+        # its own PRs are checked by workflow-check.yml. In any project created from
+        # it, this step runs (and fails) until /init-project replaces it.
+        if: github.repository != 'emiber/ai-workflow-starter'
         run: |
           echo "::error::Template not initialized — the CI quality gate hasn't been configured yet. Run /init-project (or edit .github/workflows/ci.yml per workflow/scaffolding.md) to add real lint/test/coverage steps."
           exit 1
