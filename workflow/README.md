@@ -37,11 +37,11 @@ It gives you two things:
 | `/init-project` | Interactive scaffolding: asks project type, components and stack, then generates a runnable base. | Design (Opus) |
 | `/create-issue <description>` | Creates a new issue in the tracker from a description — light capture, not full refinement. Can create it as an epic or nest it under an existing one. | Capture (Opus) |
 | `/refine-issue <n>` | Turns a raw issue into an implementable one by asking every question needed. | Analysis (Opus) |
-| `/work-issue <n>` | Implements a refined issue: `main → branch → code → PR`. A child of an epic targets the epic's integration branch. | Implementation (Sonnet) |
+| `/work-issue <n>` | Implements a refined issue: `main → branch → approved plan → code → self-review → PR`, then offers follow-ups. A child of an epic targets the epic's integration branch. | Implementation (Sonnet) |
 | `/finish-epic <n>` | Opens the integration PR (epic branch → `main`) once an epic's children are done. | Integration (Sonnet) |
 | `/review-pr <n>` | Reviews an open PR against its linked issue(s)' acceptance criteria and the Definition of Done. Read-only: never commits or pushes. | Review (Sonnet) |
 
-> Not on Claude Code? The same workflow works with Codex (`AGENTS.md`) and GitHub Copilot (`.github/copilot-instructions.md`). For Codex, this starter ships skills under `.agents/skills/` (invoked with `/skills` or `$skill-name`) that mirror the Claude Code commands, so Codex picks them up automatically. Copilot supports slash commands via prompt files under `.github/prompts/`, but those aren't shipped here — with Copilot, use natural language ("refine issue 42") or add the equivalent prompt files. Either way the logic lives in `workflow/`.
+> Not on Claude Code? The same workflow works with Codex (`AGENTS.md`) and GitHub Copilot (`.github/copilot-instructions.md`). Each command's steps live once, as a playbook in `.agents/skills/<name>/SKILL.md`: Codex runs those skills directly (invoked with `/skills` or `$skill-name`), and the Claude Code commands are thin wrappers that delegate to them. Copilot supports slash commands via prompt files under `.github/prompts/`, but those aren't shipped here — with Copilot, use natural language ("refine issue 42") and follow the matching playbook, or add the equivalent prompt files. Either way the detailed rules live in `workflow/`.
 
 ## Philosophy
 
@@ -59,8 +59,8 @@ There is no universal format. The logic lives in neutral markdown (`workflow/`, 
 
 | Agent | File it reads | Support |
 |---|---|---|
-| Claude Code | `CLAUDE.md` + `.claude/commands/*.md` | Full (slash commands, interactive refinement) |
-| Codex | `AGENTS.md` | Full (ships `.agents/skills/` mirroring the commands, plus natural language) |
+| Claude Code | `CLAUDE.md` + `.claude/commands/*.md` (thin wrappers over `.agents/skills/`) | Full (slash commands, interactive refinement, self-review subagent) |
+| Codex | `AGENTS.md` | Full (runs the `.agents/skills/` playbooks directly, plus natural language) |
 | GitHub Copilot | `.github/copilot-instructions.md` | Good (natural language out of the box; slash commands if you add `.github/prompts/` files) |
 
 All three point to the same `workflow/`. The difference is how much each one honors the interactive flow.
@@ -74,13 +74,16 @@ Reply to the user in the language they write in. But all artifacts — code, com
 A few rules the agents enforce (full detail in `workflow/principles.md` and `workflow/git-flow.md`):
 
 - **Atomic components + tests.** Prefer the smallest composable units; each ships with unit tests and coverage meets the project threshold (default 85%).
+- **Plan approval before code.** `/work-issue` posts a structured plan and waits for your explicit OK before writing code (trivial changes: a one-sentence confirmation).
+- **Independent self-review before the PR.** A fresh agent with a clean context reviews the diff against the issue, the Definition of Done, and a security checklist; blockers are fixed before the PR opens.
+- **No hidden gates.** Every PR has a Verification section listing each gate (lint, tests, coverage, self-review, security, docs) as pass or n/a with the reason.
 - **No commits or pushes unless you ask.** The agent implements and stops; running `/work-issue` is what authorizes its commit → push → PR flow.
 - **No secrets in the repo.** Credentials live in gitignored `.env` files; a `.env.example` holds placeholders.
 - **Minimal dependencies.** Every new dependency has to be justified.
-- **One PR = one issue.** Changes stay small and focused; unrelated work becomes its own issue.
+- **One PR = one issue.** Changes stay small and focused; unrelated work becomes its own issue — `/work-issue` offers to create those follow-ups (only with your approval, after checking for duplicates).
 - **Epics for big work.** Work too large for one PR becomes an epic (a parent issue). Its children each merge into a shared integration branch, and the whole epic ships to `main` via one PR opened with `/finish-epic` (see `workflow/epics.md`).
 - **Docs travel with code.** Behavior or setup changes update the docs in the same PR.
-- **CI enforces the gate.** A GitHub Actions workflow runs lint + tests + the coverage threshold (default 85%) on every PR (`/init-project` fills it in for your stack).
+- **CI enforces the gate.** A GitHub Actions workflow runs lint + tests + the coverage threshold (default 85%) on every PR, using the commands recorded in `docs/ARCHITECTURE.md` (`/init-project` fills it in for your stack). A second workflow checks the workflow files themselves (commands ↔ skills, referenced guides, listings).
 
 ## Structure
 
@@ -90,19 +93,23 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 ├── CLAUDE.md                       # Pointer + rules for Claude Code
 ├── AGENTS.md                       # Pointer for Codex
 ├── .gitignore                      # Safe baseline (/init-project extends it per stack)
+├── .gitattributes                  # Keeps *.sh with LF endings (runs from a Windows checkout)
 ├── .env.example                    # Placeholder env vars; copy to gitignored .env
 ├── .workflow-config                # Issue tracker selection (github by default)
 ├── .github/
 │   ├── copilot-instructions.md     # Pointer for Copilot
-│   └── workflows/ci.yml            # Lint + tests + coverage threshold (default 85%) on PRs
-├── .claude/commands/               # Claude Code slash commands (thin pointers to workflow/)
+│   ├── scripts/check-workflow.sh   # Workflow integrity check (commands ↔ skills, guide refs)
+│   └── workflows/
+│       ├── ci.yml                  # Lint + tests + coverage threshold (default 85%) on PRs
+│       └── workflow-check.yml      # Runs check-workflow.sh on PRs
+├── .claude/commands/               # Claude Code slash commands (thin wrappers over .agents/skills/)
 │   ├── init-project.md             # Interactive scaffolding
 │   ├── create-issue.md             # Create a new issue in the tracker
 │   ├── refine-issue.md             # Issue refinement
-│   ├── work-issue.md               # main → branch → impl → PR
+│   ├── work-issue.md               # main → branch → impl → self-review → PR
 │   ├── finish-epic.md              # Epic integration branch → main PR
 │   └── review-pr.md                # Read-only PR review against linked issue + DoD
-├── .agents/skills/                 # Same six, as Codex skills (mirror the commands)
+├── .agents/skills/                 # The six playbooks — single source, run directly by Codex
 │   ├── init-project/SKILL.md
 │   ├── create-issue/SKILL.md
 │   ├── refine-issue/SKILL.md
