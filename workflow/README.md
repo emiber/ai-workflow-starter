@@ -98,10 +98,12 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 ├── .workflow-config                # Issue tracker selection (github by default)
 ├── .github/
 │   ├── copilot-instructions.md     # Pointer for Copilot
-│   ├── scripts/check-workflow.sh   # Workflow integrity check (commands ↔ skills, guide refs)
+│   ├── scripts/
+│   │   ├── check-workflow.sh       # Workflow integrity check (commands ↔ skills, guide refs)
+│   │   └── check-workflow.test.sh  # Tests for the check, on a synthetic fixture
 │   └── workflows/
 │       ├── ci.yml                  # Lint + tests + coverage threshold (default 85%) on PRs
-│       └── workflow-check.yml      # Runs check-workflow.sh on PRs
+│       └── workflow-check.yml      # Runs the check's tests, then the check, on PRs
 ├── .claude/commands/               # Claude Code slash commands (thin wrappers over .agents/skills/)
 │   ├── init-project.md             # Interactive scaffolding
 │   ├── create-issue.md             # Create a new issue in the tracker
