@@ -177,7 +177,9 @@ an **open PR**; never merge, never push to `main`.
      push stays a fast-forward. With no local copy, the checkout creates one tracking
      `origin/epic/<n>-<slug>`, which the fetch has just updated.
    - **Ancestry check** (the `git merge-base --is-ancestor` line). It runs after the
-     checkout, so that `HEAD` is the epic branch, and before the pull. Exit 0: the local
+     checkout, so that `HEAD` is the epic branch, and before the pull. It prints nothing:
+     run the block one command at a time and read this command's exit status before the
+     pull; never run it as one script. Exit 0: the local
      branch is equal to or behind `origin`; go on. Non-zero: the local branch has commits
      that aren't on `origin` (it's ahead or has diverged, e.g. an unpushed merge commit
      from an earlier run), or the check couldn't run. Stop and report those commits
