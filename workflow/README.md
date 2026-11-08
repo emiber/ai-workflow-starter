@@ -13,10 +13,11 @@ It gives you two things:
 
 1. **Copy this repo** as the base of your new project (clone it, or copy its contents into your project folder).
 2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated. For Jira issues, also the `jira` CLI. See [Git flow requirements](#git-flow-requirements).
-3. **Open Claude Code** in the folder, ideally in Opus-plan mode so it plans with Opus and implements with Sonnet (details in `workflow/model-strategy.md`):
+3. **Open Claude Code** in the folder, ideally with `opusplan` as the session model (details in `workflow/model-strategy.md`):
    ```bash
    claude --model opusplan
    ```
+   `opusplan` uses Opus only in plan mode, so run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`, and switch back with `/model opusplan` before `/work-issue`.
 4. **Scaffold the project** — the agent asks what you're building and generates a runnable base (this replaces the placeholder root `README.md` with your project's own):
    ```
    /init-project

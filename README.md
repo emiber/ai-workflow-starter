@@ -9,7 +9,7 @@
 
 ## Quick start with the workflow
 
-1. Open Claude Code in this folder: `claude --model opusplan`
+1. Open Claude Code in this folder: `claude --model opusplan`. It uses Opus only in plan mode, so run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`, and switch back with `/model opusplan` before `/work-issue`.
 2. Run `/init-project` to scaffold the project (this replaces this README).
 3. Then use `/refine-issue <n>` and `/work-issue <n>` for the issue → PR loop.
 
