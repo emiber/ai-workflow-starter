@@ -32,34 +32,127 @@ read_file() {
   printf -v "$2" '%s' "$_buf"
 }
 
-# frontmatter_name <path>: sets $fm_name to the frontmatter's `name:` value
-# (surrounding quotes and trailing spaces ignored, as YAML does).
-name_re="^name:[[:space:]]*[\"']?([^\"'[:space:]]*)"
-frontmatter_name() {
-  local line first=1
-  fm_name=""
-  while IFS= read -r line; do
+# Skill frontmatter: check_skill checks only the two required fields, in a small
+# single-line subset of YAML. Passing it doesn't prove the frontmatter is valid
+# YAML or a valid Agent Skills skill, and optional fields aren't checked.
+#   - The first line is `---`, and the next `---` line closes the frontmatter;
+#     text in the Markdown body after it doesn't count.
+#   - Exactly one unindented `name:` and one unindented `description:`, in either
+#     order. Other lines (optional fields, indented/nested keys, blank lines,
+#     comment lines) are ignored, except an indented line that continues a
+#     required field's value (no unindented line in between): that fails.
+#   - Each is followed by a space or tab and a one-line value, with only spaces
+#     or tabs around it: plain text that starts with an ASCII letter, has no
+#     ": " or " #", doesn't end with ":" and isn't true/false/null (any case);
+#     or text in '...' with no ' inside; or text in "..." with no " or \ inside.
+#   - `name` equals the skill's directory name exactly; `description` isn't blank.
+# Not supported, so rewrite them as one line of text in one of the forms above:
+# block scalars (| or >), values continued on later lines, escapes, tags,
+# anchors, aliases, lists, maps, and comments after a required field.
+ws=$' \t'
+letters=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+
+# field_value <path> <field> <text after the colon>: sets $value to the field's
+# text, or reports why it isn't in the supported form and returns 1.
+field_value() {
+  local v=$3 q why=""
+  value=""
+  while [[ $v == [$ws]* ]]; do v=${v#?}; done
+  while [[ $v == *[$ws] ]]; do v=${v%?}; done
+  if [ -z "$v" ]; then
+    why="is empty"
+  elif [[ $3 != [$ws]* ]]; then
+    why="needs a space or tab after the colon"
+  else
+    case "$v" in
+      \"* | \'*)
+        q=${v:0:1}
+        if [[ $v != ?*"$q" ]]; then
+          why="has an unclosed quote or text after the closing quote"
+        else
+          v=${v#?}
+          v=${v%?}
+          if [[ $v == *"$q"* ]] || { [ "$q" = '"' ] && [[ $v == *'\'* ]]; }; then
+            why="has its own quote or a backslash inside the quotes"
+          elif [[ $v != *[!$ws]* ]]; then
+            why="is empty"
+          fi
+        fi
+        ;;
+      [Tt][Rr][Uu][Ee] | [Ff][Aa][Ll][Ss][Ee] | [Nn][Uu][Ll][Ll])
+        why="needs quotes (YAML reads bare true, false and null as non-text)" ;;
+      *:[$ws]* | *: | *[$ws]#*)
+        why="can't have ': ' or ' #' or end with ':' unless quoted" ;;
+      [$letters]*) ;;
+      *) why="needs quotes" ;;
+    esac
+  fi
+  if [ -n "$why" ]; then
+    fail "$1: frontmatter $2: $why; write it as one line of text, plain (starting with a letter) or in '...' or \"...\" quotes"
+    return 1
+  fi
+  value=$v
+}
+
+# check_skill <SKILL.md path> <skill name>: reports every problem in the skill's
+# required frontmatter fields (see above).
+check_skill() {
+  local line rest cont="" opened=0 closed=0 names=0 descs=0
+  while IFS= read -r line || [ -n "$line" ]; do
     line=${line%$'\r'}
-    if [ "$first" = 1 ]; then
-      first=0
-      [ "$line" = "---" ] || return 0
-      continue
-    fi
-    [ "$line" = "---" ] && return 0
-    if [[ $line =~ $name_re ]]; then
-      fm_name=${BASH_REMATCH[1]}
-      return 0
+    if [ "$opened" = 0 ]; then
+      [ "$line" = "---" ] || break
+      opened=1
+    elif [ "$line" = "---" ]; then
+      closed=1
+      break
+    else
+      case "$line" in
+        name:*)
+          names=$((names + 1))
+          cont=""
+          if field_value "$1" name "${line#name:}"; then
+            cont=name
+            [ "$value" = "$2" ] || fail "$1: frontmatter name must be '$2'"
+          fi
+          ;;
+        description:*)
+          descs=$((descs + 1))
+          cont=""
+          field_value "$1" description "${line#description:}" && cont=description
+          ;;
+        [$ws]*)
+          # An indented line right after an accepted required field, other than
+          # a blank or comment line, continues its value: report it once.
+          if [ -n "$cont" ]; then
+            rest=$line
+            while [[ $rest == [$ws]* ]]; do rest=${rest#?}; done
+            if [ -n "$rest" ] && [ "${rest:0:1}" != "#" ]; then
+              fail "$1: frontmatter $cont: continues on the next line; write it as one line of text, plain (starting with a letter) or in '...' or \"...\" quotes"
+              cont=""
+            fi
+          fi
+          ;;
+        "") ;;
+        *) cont="" ;;
+      esac
     fi
   done < "$1"
+  if [ "$opened" = 0 ]; then
+    fail "$1: frontmatter must start with a '---' line"
+    return
+  fi
+  [ "$closed" = 1 ] || fail "$1: frontmatter has no closing '---' line"
+  [ "$names" = 1 ] || fail "$1: frontmatter must have exactly one name: field, found $names"
+  [ "$descs" = 1 ] || fail "$1: frontmatter must have exactly one description: field, found $descs"
 }
 
 # 1. Every command has a skill and delegates to it, every skill has a command,
-#    and frontmatter names match the file/dir names.
+#    and every skill's frontmatter passes check_skill. Command frontmatter isn't
+#    checked: Claude Code ignores `name` on commands.
 for f in .claude/commands/*.md; do
   n=${f##*/}
   n=${n%.md}
-  frontmatter_name "$f"
-  [ "$fm_name" = "$n" ] || fail "$f: frontmatter name must be '$n'"
   if [ ! -f ".agents/skills/$n/SKILL.md" ]; then
     fail "$f has no matching .agents/skills/$n/SKILL.md"
   else
@@ -74,8 +167,7 @@ for d in .agents/skills/*/; do
     fail "$d has no SKILL.md"
     continue
   fi
-  frontmatter_name "$d/SKILL.md"
-  [ "$fm_name" = "$n" ] || fail "$d/SKILL.md: frontmatter name must be '$n'"
+  check_skill "$d/SKILL.md" "$n"
   [ -f ".claude/commands/$n.md" ] || fail "$d has no matching .claude/commands/$n.md"
 done
 
