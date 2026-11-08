@@ -34,9 +34,11 @@ tree in GitHub's UI and lets the flow enumerate children reliably. Create both.
 ### Jira
 
 Jira has a first-class **Epic** issue type. Create the parent as an Epic and link each
-child with the **Epic Link / parent** field (`jira issue create` with the parent, or set
+child with the **Epic Link / parent** field (set it when creating the child, or set
 it on an existing issue with `jira issue edit`). No label convention is needed — the
-Epic type and parent field are native.
+Epic type and parent field are native. Both are created in the repository's project:
+`jira issue create` always gets `--project` with `jira_project` (**Project selection** in
+`workflow/issue-tracker.md`).
 
 ## Integration branch model
 
