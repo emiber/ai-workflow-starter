@@ -71,15 +71,88 @@ fails, stop and report what's done and what's missing:
 
 ### Jira
 
-The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/ankitpokhrel/jira-cli)** (the `jira` binary, v1.5+) — the specific CLI this workflow targets. Other tools also named `jira` have different command trees, so if you use a different one, map these operations to its equivalents. Install it (e.g. `brew install ankitpokhrel/jira-cli/jira-cli`, or a release binary from the repo), then run `jira init` to authenticate and select the default project.
+The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/ankitpokhrel/jira-cli)** (the `jira` binary, v1.5+) — the specific CLI this workflow targets. Other tools also named `jira` have different command trees, so if you use a different one, map these operations to its equivalents. Install it (e.g. `brew install ankitpokhrel/jira-cli/jira-cli`, or a release binary from the repo), then run `jira init` to authenticate. `jira init` also asks for a default project: that's jira-cli's own setting, and the workflow doesn't rely on it (see **Project selection** below).
 
 - View issue: `jira issue view <KEY>` (e.g. `jira issue view ABC-123`)
 - Edit/comment: `jira issue edit <KEY>` / `jira issue comment add <KEY>`
-- Create issue: `jira issue create`
+- Create issue: `jira --project ABC issue create`, with `ABC` standing for `jira_project` (see **Project selection** below)
 - Reference in PR: include the key in the PR title/body (e.g. `[ABC-123] ...`). Jira does **not** close the issue automatically via the GitHub PR unless there's an integration configured; assume closing is done by a human or Jira automation, not the flow.
 - Requires: `ankitpokhrel/jira-cli` installed and initialized via `jira init` (`jira me` to verify authentication).
 
 > Note on key vs. number: on GitHub the issue is a number (`42`); on Jira it's a key (`ABC-123`). When the user passes the argument, take it as-is: if the tracker is Jira, expect a key; if GitHub, a number.
+
+#### Project selection
+
+`jira_project` in `.workflow-config` is the repository's project. It decides where every
+project-scoped command the workflow runs goes: creating an issue (any type, including an
+Epic or a child created with its parent), the duplicate search, and the candidate-epic
+search (`workflow/issue-creation.md` steps 2, 3 and 5). jira-cli's default project, chosen
+at `jira init`, never does, not even when it's the same key: pass the repository's key
+anyway. Never edit `.workflow-config`, rerun `jira init`, or change jira-cli's config to
+make the two agree.
+
+**Read the key** once the tracker resolves to Jira, before the first of those commands:
+it's the value after `jira_project=` on an uncommented line (the shipped
+`# jira_project=ABC` is a comment and doesn't count).
+
+- Missing, empty, or only whitespace → stop before any search or creation and report that
+  `.workflow-config` needs `jira_project=<KEY>`. Don't take the key from jira-cli's
+  default or from an issue key, and don't write it into the file yourself. A missing
+  `issue_tracker` is a different case, handled as in **How it's resolved** above.
+- Leading or trailing whitespace, a quote (`'` or `"`), a backslash, or a control
+  character → stop and ask the user to correct the value: it can't be passed as a literal
+  key, and it's never trimmed or rewritten into another key. Don't test the value against
+  a key pattern either: whether the project exists is Jira's call.
+
+**Scope each command twice.** Pass the key with jira-cli's global `--project` (`-p`) on
+every project-scoped command, and start every raw JQL query (`--jql`, `-q`) with the same
+key as `project = "ABC"`, followed by `AND` and the rest of the query in parentheses. Both
+are needed: `--project` alone doesn't confine a raw query, because jira-cli drops its
+implicit project filter whenever the `--jql` text contains the word `project`. So
+`jira --project ABC issue list --jql 'project = "XYZ"'` searches XYZ, not ABC. The
+workflow's own queries never name a project other than the configured one. With
+`jira_project=ABC`:
+
+```text
+jira --project ABC issue create --type Task --summary "Example summary" --body "Example description"
+jira --project ABC issue list --plain --jql 'project = "ABC" AND (summary ~ "<key words>" AND statusCategory != Done)'
+jira --project ABC issue list --plain --jql 'project = "ABC" AND (issuetype = "Epic" AND statusCategory != Done)'
+```
+
+- Put the configured key in both places, the same in each. `Task` and `Epic` are example
+  names: use the project's own issue types. Create's `--type`, `--summary` and `--body`
+  are `-t`, `-s` and `-b`.
+- `--plain` prints the list as text; without it, `issue list` opens an interactive table.
+- Alternatives go inside the parentheses, never beside the project predicate:
+  `project = "ABC" AND (summary ~ "login" OR summary ~ "timeout")`.
+- The key and the keywords are data, never shell or JQL syntax. The whole `--jql` value is
+  one quoted shell argument, and each value in it a JQL string in double quotes. Prefer
+  plain words as keywords. Inside a JQL string, write `"` as `\"` and `\` as `\\`; escape
+  the shell's own quote for the shell in use (in the single-quoted examples: Bash `'\''`,
+  PowerShell `''`). Quote the `--project` value too if the shell would read any of its
+  characters as syntax.
+
+**Read the result** by exit status and message:
+
+- **Exit 0** → the rows printed are the visible matches (for a create, the new key).
+- **Exit 1 with the message `No result found for given query in project "ABC"`** → the
+  search ran and found nothing; jira-cli reports an empty result this way. Treat it as no
+  match and follow the calling guide's no-match path, with its usual confirmations. It
+  doesn't prove that the project exists or that you can see it, and it never widens the
+  search to another project.
+- **Anything else** (a project Jira reports as invalid, nonexistent or inaccessible;
+  authentication; permissions; JQL; an unsupported issue type; CLI metadata that doesn't
+  fit the project; network) → stop the flow. Report the operation, the project key and
+  jira-cli's message, never a token or credentials. A failed search is never "no match",
+  so don't go on to create. Don't retry without `--project`, fall back to jira-cli's
+  default project, run `jira init`, or probe which projects exist.
+
+**Complete issue keys keep their own project.** `jira issue view XYZ-123`,
+`jira issue edit XYZ-123` and `jira issue comment add XYZ-123` act on exactly XYZ-123,
+also when `jira_project` is ABC: don't rewrite the prefix or check it against
+`jira_project`. These commands don't need `jira_project`, so a missing one stops only
+searches and creation. Bare numbers stay invalid inputs (see the note on key vs. number
+above).
 
 ### Parent/child (epics)
 

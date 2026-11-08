@@ -14,6 +14,10 @@ the user explicitly asks.
 Determine whether the project uses GitHub or Jira following `workflow/issue-tracker.md`
 (check `.workflow-config`; it ships preset to GitHub). Make sure the tracker CLI is
 authenticated first — `gh auth status` for GitHub, `jira me` for Jira.
+On Jira, also read the repository's project key (`jira_project`) as **Project selection**
+in `workflow/issue-tracker.md` says: every Jira search and creation below runs in that
+project, never in jira-cli's default one, and a missing or unusable key stops the flow
+before them.
 
 ## Steps
 
@@ -37,7 +41,10 @@ Before drafting, search the open issues for the same problem, using two or three
 words from the request:
 
 - **GitHub**: `gh issue list --state open --search "<key words>"`
-- **Jira**: `jira issue list -q 'summary ~ "<key words>" AND statusCategory != Done'`
+- **Jira**: `jira --project ABC issue list --plain --jql 'project = "ABC" AND (summary ~ "<key words>" AND statusCategory != Done)'`,
+  with your `jira_project` in place of `ABC` in both places. jira-cli reports an empty
+  result as an error: tell the two apart as **Project selection** in
+  `workflow/issue-tracker.md` says. A failed search stops the flow; it's never "no match".
 
 If one plausibly matches, show it and ask: add the new context to the existing issue
 (a comment), or create a new one anyway (and mention the related issue in its body).
@@ -61,10 +68,12 @@ structure silently, and never invent a parent. See `workflow/epics.md` for the h
   the children now is optional — offer to, but don't force a full breakdown at capture time.
 
 - **Does it belong under an existing epic?** For a normal (non-epic) issue, list open epics
-  — GitHub `gh issue list --label epic --state open`, Jira the project's epics. If the new
-  issue plausibly fits one, propose linking it as a child and confirm. If confirmed, create
-  it and then link it as a child (GitHub sub-issue / Jira Epic Link — commands in
-  `workflow/issue-tracker.md`). If nothing fits or the user declines, create it standalone.
+  — GitHub `gh issue list --label epic --state open`, Jira
+  `jira --project ABC issue list --plain --jql 'project = "ABC" AND (issuetype = "Epic" AND statusCategory != Done)'`
+  (key and result rules as in step 2). If the new issue plausibly fits one, propose
+  linking it as a child and confirm. If confirmed, create it and then link it as a child
+  (GitHub sub-issue / Jira Epic Link — commands in `workflow/issue-tracker.md`). If
+  nothing fits or the user declines, create it standalone.
 
 If neither applies (a plain, self-contained issue with no matching epic), skip this and
 carry on — this is the common case.
@@ -84,8 +93,11 @@ Show the draft (title + body) to the user and confirm before creating.
 
 - **GitHub**: `gh issue create --title "<title>" --body-file <file>` (add
   `--label <type>` if the project uses type labels). Returns the issue URL/number.
-- **Jira**: `jira issue create` with the summary, description, and the project's
-  issue type. Returns the key.
+- **Jira**: `jira --project ABC issue create` (same key as step 2) with the summary,
+  description, and the project's issue type, e.g.
+  `--type Task --summary "<title>" --body "<body>"`. Returns the key. If it fails, stop
+  and report it (**Project selection** in `workflow/issue-tracker.md`); never retry it
+  without `--project`.
 
 If step 3 decided this is an **epic** or a **child**, apply the hierarchy now
 (details in `workflow/epics.md`):

@@ -13,7 +13,7 @@ Determine whether the project uses GitHub or Jira following `workflow/issue-trac
 - **GitHub**: `gh issue view <n> --json title,body,labels,comments`
 - **Jira**: `jira issue view <KEY>`
 
-If it doesn't exist, say so and offer to create it with `/create-issue` (see `workflow/issue-creation.md`), or directly with `gh issue create` / `jira issue create`.
+If it doesn't exist, say so and offer to create it with `/create-issue` (see `workflow/issue-creation.md`), or directly with `gh issue create` / `jira --project ABC issue create` (`ABC` being `jira_project`; see **Project selection** in `workflow/issue-tracker.md`).
 
 ### 2. Detect ambiguities
 
