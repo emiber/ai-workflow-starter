@@ -129,7 +129,13 @@ an **open PR**; never merge, never push to `main`.
 ### Steps
 
 1. **Fetch the epic and its children.** GitHub: list the epic's children (parent/child
-   commands in `workflow/issue-tracker.md`). Jira: list issues with this Epic as parent.
+   commands in `workflow/issue-tracker.md`). Use the list only once the listing command
+   has succeeded: check its exit status before reading its output; with the REST fallback,
+   that means every page (rules in that guide). If it fails, discard whatever it printed,
+   even children from pages that succeeded, and stop: report the epic and the error.
+   Nothing below — the done check, the sync and push, the `Closes` lines, the PR — runs on
+   a failed or partial list. Jira: list issues with this Epic as parent. The result is
+   **the child list**, each child once; steps 2 and 4 both use it.
 2. **Check children are done.** List the PRs into the epic branch once, where
    `<epic branch>` is the branch the preflight resolved:
    ```bash
@@ -139,7 +145,7 @@ an **open PR**; never merge, never push to `main`.
    If the command exits non-zero, stop and report the error; a failed query never means a
    child is missing. A PR belongs to child `<childN>` when its head branch matches
    `*/<childN>-*`, the `<type>/<childN>-<slug>` convention (`*/1-*` doesn't match
-   `feat/12-…`). For each child:
+   `feat/12-…`). For each child in the child list (step 1):
    - **Done**: at least one of its PRs is `MERGED`, whether or not the child *issue* is
      still open. Leaving child issues open until the epic reaches `main` is the recommended
      default (see above), so an open child issue whose PR is already merged is **not**
@@ -182,6 +188,9 @@ an **open PR**; never merge, never push to `main`.
    - #<child1> <title>
    - #<child2> <title>"
    ```
+   Write one `Closes #<child>` line per child in the child list (step 1), the same list
+   step 2 checked: every child, each exactly once.
+
    On Jira, drop the `Closes` lines, put the Epic key in the title (`[ABC-123] ...`), and
    list child keys in the body.
 5. **Don't merge.** Leave the PR open for human review and return its link.
