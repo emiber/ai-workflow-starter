@@ -8,7 +8,7 @@ description: Refine and clarify an issue (GitHub or Jira) by asking every questi
 Refine the target issue (its number on GitHub or key on Jira — provided as the argument, or stated by the user). This is the canonical playbook: Codex runs it directly and the Claude Code `/refine-issue` command delegates to it. The detailed rules live in `workflow/`.
 
 1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/issue-refinement.md`, and `workflow/issue-tracker.md`.
-2. Resolve the issue tracker per `workflow/issue-tracker.md` — `.workflow-config` ships preset to GitHub, so only ask if the file is missing or has no `issue_tracker`, then save the choice. Make sure the tracker CLI is authenticated (`gh auth status` for GitHub, `jira me` for Jira).
+2. Resolve the issue tracker per `workflow/issue-tracker.md` — `.workflow-config` ships preset to GitHub and is required. Only if it's missing or has no `issue_tracker`, ask (an empty answer means GitHub), write the answer to the file, and tell the user to commit it: CI's workflow integrity check fails until it's committed. Make sure the tracker CLI is authenticated (`gh auth status` for GitHub, `jira me` for Jira).
 3. Fetch the issue with the matching tracker command (number on GitHub, key on Jira).
 4. List its ambiguities: goal, scope, behavior, data, dependencies, acceptance criteria, non-functional.
 5. Ask the user the questions needed to close them, in small groups. Don't proceed on unconfirmed assumptions. If the user delegates a decision, propose and confirm a concrete choice, record it under **Assumptions**, and reflect its effects in every applicable issue section.

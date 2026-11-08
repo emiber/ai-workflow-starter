@@ -21,7 +21,7 @@ It gives you two things:
    git remote add origin <your-repo-url>
    git push -u origin main
    ```
-2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated. For Jira issues, also the `jira` CLI. See [Git flow requirements](#git-flow-requirements).
+2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated, `gh` ≥ 2.94 (on older `gh` or GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md`). For Jira issues, also the `jira` CLI. `bash` (Git Bash on Windows) is only needed to run the workflow integrity check locally. See [Git flow requirements](#git-flow-requirements).
 3. **Open Claude Code** in the folder, ideally with `opusplan` as the session model (details in `workflow/model-strategy.md`):
    ```bash
    claude --model opusplan
@@ -88,7 +88,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 - **Plan approval before code.** `/work-issue` posts a structured plan and waits for your explicit OK before writing code (trivial changes: a one-sentence confirmation).
 - **Independent self-review before the PR.** A fresh agent with a clean context reviews the diff against the issue, the Definition of Done, and a security checklist; blockers are fixed before the PR opens.
 - **No hidden gates.** Every PR has a Verification section listing each gate (lint, tests, coverage, self-review, security, docs) as pass or n/a with the reason.
-- **No commits or pushes unless you ask.** The agent implements and stops; running `/work-issue` is what authorizes its commit → push → PR flow.
+- **No commits or pushes unless you ask.** The agent implements and stops; running `/work-issue` or `/finish-epic` authorizes only the commits and pushes that flow declares: `/work-issue`'s commit → push → PR, and `/finish-epic`'s epic-branch sync, push and integration PR (`workflow/rules.md` rule 5).
 - **No secrets in the repo.** Credentials live in gitignored `.env` files; a `.env.example` holds placeholders.
 - **Minimal dependencies.** Every new dependency has to be justified.
 - **One PR = one issue.** Changes stay small and focused; unrelated work becomes its own issue — `/work-issue` offers to create those follow-ups (only with your approval, after checking for duplicates).
@@ -149,8 +149,10 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 
 ## Issue tracker
 
-Defaults to **GitHub**, already set in `.workflow-config` (`issue_tracker=github`), so the agent doesn't ask. To use Jira instead, edit that file (`issue_tracker=jira` plus `jira_project=...`). If the file is ever missing, the agent falls back to asking and defaults to GitHub. The PR always goes to GitHub, whatever tracker you use. Details in `workflow/issue-tracker.md`.
+Defaults to **GitHub**, already set in `.workflow-config` (`issue_tracker=github`), so the agent doesn't ask. To use Jira instead, edit that file (`issue_tracker=jira` plus `jira_project=...`). The file is required: CI's workflow integrity check fails without it. If it's missing or has no `issue_tracker`, `/create-issue` and `/refine-issue` ask (an empty answer means GitHub), write it, and tell you to commit it; the check keeps failing in CI until you do. `/review-pr` and the `/work-issue` and `/finish-epic` preflights never write it: they stop and tell you how to restore it (`git checkout -- .workflow-config`, or create it with `issue_tracker=github`, or `issue_tracker=jira` plus `jira_project=<KEY>`, and commit it). The PR always goes to GitHub, whatever tracker you use. Details in `workflow/issue-tracker.md`.
 
 ## Git flow requirements
 
-`git` and `gh` (GitHub CLI) authenticated. For Jira, additionally the `jira` CLI configured. The agent does **not** merge; it leaves the PR open for human review.
+`git` and `gh` (GitHub CLI) authenticated, with `gh` ≥ 2.94: the `/work-issue` and `/review-pr` preflights check it, because they read an issue's `parent` to detect epics. On older `gh` or GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md` (Parent/child). For Jira, additionally the `jira` CLI configured. The agent does **not** merge; it leaves the PR open for human review.
+
+`bash` (Git Bash on Windows) is needed only to run the workflow integrity check locally (`bash .github/scripts/check-workflow.sh`). It isn't a requirement: CI runs the check on every PR, and without `bash`, `/init-project` does the same checks by hand (`workflow/scaffolding.md`, Template integrity check).

@@ -1,5 +1,4 @@
 ---
-name: review-pr
 description: Reviews an open PR against its linked issue(s) and the Definition of Done. Read-only. Reads workflow/pr-review.md.
 ---
 

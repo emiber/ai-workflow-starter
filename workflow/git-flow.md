@@ -15,7 +15,7 @@ Run these **before touching anything**. They're read-only — if one fails, stop
 | `gh` authenticated | `gh auth status` | `gh auth login`. The PR always goes to GitHub, whatever the issue tracker. |
 | `gh` supports sub-issues (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or, on older `gh` / GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md` for parent detection and sub-issue links. Step 1 reads an issue's `parent` to detect epics, so this is required whenever epics are in play. |
 | Working tree clean | `git status --porcelain` is empty | Commit, stash, or discard changes before starting. |
-| Tracker resolved | see `workflow/issue-tracker.md` | Defaults to GitHub via `.workflow-config`. |
+| Tracker resolved | see `workflow/issue-tracker.md` | `.workflow-config` ships set to GitHub. If it's missing or has no `issue_tracker`, don't write it: report how to restore it, as `workflow/issue-tracker.md` says. |
 | Tracker authenticated | Jira only: `jira me` (GitHub already covered above) | Authenticate the Jira CLI and retry. |
 
 ## Steps
@@ -23,7 +23,9 @@ Run these **before touching anything**. They're read-only — if one fails, stop
 ### 1. Fetch and verify the issue
 
 Fetch the issue using the selected tracker and read the full refined issue, including its acceptance criteria and any confirmed assumptions. Verify
-that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refining
+that it is refined, as step 4 of `workflow/issue-refinement.md` marks it: on GitHub, the
+issue has the `refined` label; on Jira, it has the refinement comment `/refine-issue`
+leaves, or the project's refined label or status. If it isn't, suggest refining
 it first; if the user insists, refine it minimally on the spot.
 
 Also check whether the issue has a **parent epic** — determine this from structured data,

@@ -19,14 +19,16 @@ jira_project=ABC
 
 ## How it's resolved when running an issue command
 
-`.workflow-config` **ships with `issue_tracker=github`**, so by default the agent uses GitHub and never asks. To switch to Jira, edit that file (see below). Any command that touches issues (`/create-issue`, `/refine-issue`, `/work-issue`) resolves the tracker **before doing anything**:
+`.workflow-config` **ships with `issue_tracker=github`**, so by default the agent uses GitHub and never asks. To switch to Jira, edit that file (see below). The file is **required**: the workflow integrity check (`.github/scripts/check-workflow.sh`, which CI runs on every PR) fails without it. Any command that touches issues (`/create-issue`, `/refine-issue`, `/work-issue`, `/review-pr`, `/finish-epic`) resolves the tracker **before doing anything**:
 
 1. Does `.workflow-config` exist with `issue_tracker`? → use that value, don't ask. (This is the normal case — the file ships preset to `github`.)
-2. Only if the file is missing or has no `issue_tracker` → ask the user:
-   > Which issue tracker do you use in this project? (github / jira) [default: github]
-   Then save the answer in `.workflow-config` so it doesn't ask again.
+2. Only if the file is missing or has no `issue_tracker`, it depends on the command:
+   - **`/create-issue` and `/refine-issue`** ask the user:
 
-If the user doesn't answer or answers empty, assume **github**.
+     > Which issue tracker do you use in this project? (github / jira) [default: github]
+
+     If the user doesn't answer or answers empty, assume **github**. Add `issue_tracker=<answer>` to `.workflow-config`, creating the file if it's missing (on Jira, **Project selection** below still applies to `jira_project`). Then tell the user to commit the file: until it's committed, CI's workflow integrity check fails.
+   - **`/review-pr`, and the `/work-issue` and `/finish-epic` preflights**, are read-only: they never write `.workflow-config`. Stop and report how to restore it: `git checkout -- .workflow-config`, or create it (`issue_tracker=github`, or `issue_tracker=jira` plus `jira_project=<KEY>`) and commit it.
 
 ## Commands per tracker
 

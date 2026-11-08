@@ -1,5 +1,4 @@
 ---
-name: finish-epic
 description: Opens the integration PR (epic branch → main) when an epic's children are done. Reads workflow/epics.md.
 ---
 

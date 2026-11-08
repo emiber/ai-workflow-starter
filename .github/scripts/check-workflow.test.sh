@@ -36,7 +36,7 @@ make_fixture() {
   printf -- '| `/demo` | Demo |\n' > "$d/workflow/README.md"
   printf -- '| `/demo` | Demo |\n' > "$d/workflow/model-strategy.md"
   printf -- '# Guide\n' > "$d/workflow/guide.md"
-  printf -- '---\nname: demo\n---\n\nFirst read `.agents/skills/demo/SKILL.md`.\n' > "$d/.claude/commands/demo.md"
+  printf -- '---\ndescription: Demo command.\n---\n\nFirst read `.agents/skills/demo/SKILL.md`.\n' > "$d/.claude/commands/demo.md"
   printf -- '---\nname: demo\ndescription: Demo skill.\n---\n\nSee `workflow/guide.md`.\n' > "$d/.agents/skills/demo/SKILL.md"
   printf 'issue_tracker=github\n' > "$d/.workflow-config"
 }
@@ -45,21 +45,28 @@ make_fixture() {
 healthy() { :; }
 quoted_and_crlf_names() {
   printf -- '---\r\nname: "demo"  \r\ndescription:\t%s\t \r\n---\r\n\r\nSee `workflow/guide.md`.\r\n' "'false'" > .agents/skills/demo/SKILL.md
-  printf -- "---\nname: 'demo'\n---\n\nFirst read \`.agents/skills/demo/SKILL.md\`.\n" > .claude/commands/demo.md
 }
 command_without_skill() { rm -r .agents/skills/demo; }
 skill_without_command() { mkdir .agents/skills/other && printf -- '---\nname: other\ndescription: Other skill.\n---\n' > .agents/skills/other/SKILL.md; }
 skill_dir_without_skill_md() { mkdir .agents/skills/empty; }
-command_not_delegating() { printf -- '---\nname: demo\n---\n\nDo the demo.\n' > .claude/commands/demo.md; }
+command_not_delegating() { printf -- '---\ndescription: Demo command.\n---\n\nDo the demo.\n' > .claude/commands/demo.md; }
 wrong_frontmatter_name() { printf -- '---\nname: demo2\ndescription: Demo skill.\n---\n' > .agents/skills/demo/SKILL.md; }
 unlisted_command() {
   mkdir .agents/skills/extra &&
     printf -- '---\nname: extra\ndescription: Extra skill.\n---\n' > .agents/skills/extra/SKILL.md &&
-    printf -- '---\nname: extra\n---\n\nFirst read `.agents/skills/extra/SKILL.md`.\n' > .claude/commands/extra.md
+    printf -- '---\ndescription: Extra command.\n---\n\nFirst read `.agents/skills/extra/SKILL.md`.\n' > .claude/commands/extra.md
 }
 dangling_reference() { printf -- 'See `workflow/missing.md`.\n' >> workflow/guide.md; }
 jira_without_project() { printf 'issue_tracker=jira\n' > .workflow-config; }
 unknown_tracker() { printf 'issue_tracker=linear\n' > .workflow-config; }
+prefix_only_listing() {
+  mkdir .agents/skills/dem &&
+    printf -- '---\nname: dem\ndescription: Dem skill.\n---\n' > .agents/skills/dem/SKILL.md &&
+    printf -- '---\ndescription: Dem command.\n---\n\nFirst read `.agents/skills/dem/SKILL.md`.\n' > .claude/commands/dem.md &&
+    printf -- 'Skills: `dem`.\n' >> AGENTS.md
+}
+missing_entry_file() { rm CLAUDE.md; }
+missing_workflow_config() { rm .workflow-config; }
 
 # Skill frontmatter cases. demo_skill <line>...: rewrites the demo skill as just
 # these lines between `---` delimiters.
@@ -203,6 +210,9 @@ run_case "command missing from the entry files" 1 "CLAUDE.md doesn't list the ex
 run_case "dangling guide reference" 1 "workflow/guide.md references workflow/missing.md, which does not exist" dangling_reference
 run_case "jira tracker without a project" 1 "issue_tracker=jira needs jira_project" jira_without_project
 run_case "unknown tracker" 1 "must set issue_tracker=github or issue_tracker=jira" unknown_tracker
+run_case "command listed only as a prefix of another" 1 "::error::workflow/model-strategy.md doesn't list the dem command"$'\n'"Workflow integrity: 4 problem(s) found." prefix_only_listing
+run_case "missing entry file" 1 $'::error::missing CLAUDE.md\nWorkflow integrity: 1 problem(s) found.' missing_entry_file
+run_case "missing .workflow-config" 1 $'::error::missing .workflow-config\nWorkflow integrity: 1 problem(s) found.' missing_workflow_config
 
 skill=".agents/skills/demo/SKILL.md: frontmatter"
 run_case "fields in either order, optional and nested fields, body text" 0 "Workflow integrity: OK." reordered_and_optional_fields
