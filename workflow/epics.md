@@ -136,7 +136,7 @@ an **open PR**; never merge, never push to `main`.
    even children from pages that succeeded, and stop: report the epic and the error.
    Nothing below — the done check, the sync and push, the `Closes` lines, the PR — runs on
    a failed or partial list. Jira: list issues with this Epic as parent. The result is
-   **the child list**, each child once; steps 2 and 5 both use it.
+   **the child list**, each child once; steps 2, 4 and 5 use it.
 2. **Check children are done.** List the PRs into the epic branch once, where
    `<epic branch>` is the branch the preflight resolved:
    ```bash
@@ -193,7 +193,10 @@ an **open PR**; never merge, never push to `main`.
      never a half-merged tree. When the merge stops on conflicts, first record the
      **conflicted files** (`git diff --name-only --diff-filter=U`), before you resolve or
      `git add` anything: the list is empty afterwards, and step 4's review needs it. If
-     there are conflicts you can't resolve safely, stop and report.
+     there are conflicts you can't resolve safely, stop and report. If the merge made a
+     commit (not "Already up to date", not a fast-forward), record its SHA right after it
+     is committed as **`<merge>`** (`git rev-parse HEAD`; its second parent is
+     `origin/main`): step 4's review diffs it, and a fix made later moves `HEAD` past it.
 4. **Validate the final revision.** Each child's PR was checked on its own, but merging
    `main` can still break the combined result (e.g. `main` changed an interface a child
    uses). Before anything is pushed, check the exact commit step 5 will publish, in this
@@ -220,9 +223,9 @@ an **open PR**; never merge, never push to `main`.
      the merge context; if you can't start one, run the review yourself and record it as
      inline. The merge context is `git diff origin/epic/<n>-<slug> HEAD` (all this run
      adds to the published epic: what `main` brought in, the conflict resolutions, any
-     fixes) and, if step 3 made a merge commit `<merge>`, the conflicted files recorded
-     in step 3. The review reads each conflicted file's resolution in full, against both
-     parents (`git diff <merge>^1 <merge> -- <file>`, `git diff <merge>^2 <merge> -- <file>`);
+     fixes) and, if step 3 recorded a merge commit `<merge>`, its SHA and the conflicted
+     files recorded in step 3. The review reads each conflicted file's resolution in full,
+     against both parents (`git diff <merge>^1 <merge> -- <file>`, `git diff <merge>^2 <merge> -- <file>`);
      where Git is 2.36 or newer, `git show --remerge-diff <merge>` also shows how each
      conflict was resolved. `git show --cc` isn't enough: it leaves out a resolution
      that keeps one side, such as dropping what `main` changed. The review
