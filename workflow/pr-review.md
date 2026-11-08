@@ -11,7 +11,7 @@ The same contract runs in two modes: against an **open PR** (`/review-pr <n>`, s
 Same checks, different inputs. You're given an issue number and a base branch:
 
 - **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child.
-- **Linked issue** = the issue you were given; fetch it with step 2's commands.
+- **Linked issue** = the issue you were given; fetch it with step 2's commands. Skip the **Epic parent** suggestion (step 1): `/work-issue` already reported a non-epic parent and asked the user in `workflow/git-flow.md` step 1.
 - **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
 - **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
@@ -40,9 +40,11 @@ gh pr view <n> --json number,title,body,baseRefName,headRefName,state,additions,
 
 **Classify the PR** from its head/base branches (and the linked issues' `parent`, from step 2). There are three valid shapes:
 
-- **Standalone** — feature branch → `main`; the linked issue has no `parent`; closed with `Closes`.
-- **Epic child** — feature branch → a base starting with `epic/<parentN>-`, where `<parentN>` is the linked issue's `parent` (whatever the slug); referenced with `Refs`.
+- **Standalone** — feature branch → `main`; the linked issue has no epic parent (no `parent`, or a parent that isn't an epic; see **Epic parent** below); closed with `Closes`.
+- **Epic child** — feature branch → a base starting with `epic/<parentN>-`, where `<parentN>` is the linked issue's `parent` (whatever the slug) and that parent is an epic (see **Epic parent** below); referenced with `Refs`.
 - **Epic integration** — head starting with `epic/<epicN>-` (whatever the slug) → base `main`; opened by `/finish-epic`. Its linked issues are the epic itself **plus** its children — the one explicit exception to "one PR = one issue" (see `workflow/epics.md`). Its child issues are correctly targeted here; do **not** flag them as mis-based.
+
+**Epic parent.** For a feature-branch PR, the linked issue's parent decides between **Epic child** and **Standalone**: only a parent that is in the issue's own repository and is an epic (the check is in step 2) makes it an epic child. A parent that isn't an epic, or is in another repository, makes the PR **Standalone**. Don't ask — this review only reports: add a suggestion that names the parent (e.g. "#<n>'s parent #<parentN> isn't labeled `epic`; if it's meant to be an epic, label it and review again", or "#<n>'s parent <owner>/<repo>#<m> is in another repository"), so a real epic that's missing its `epic` label doesn't go unnoticed. This holds whatever the base: a feature-branch PR into `epic/<parentN>-…` whose parent isn't an epic is Standalone, and the **Target branch** row (step 4) then flags its base as a blocker. The **Epic integration** shape doesn't use this rule: it's classified by its `epic/<epicN>-*` → `main` branches, not by `parent`.
 
 Anything that fits none of these (e.g. a child branch pointing at `main`, or a mixed set of unrelated issues) → flag for manual validation.
 
@@ -56,13 +58,20 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   ```
   This is authoritative for a PR into the default branch that uses a closing keyword (`Closes`/`Fixes`/`Resolves #<n>`). If it returns nothing — the normal case for an **epic child PR** (non-default base, references its issue with `Refs`) or any link-only PR — fall back to scanning the PR body for **keyworded references only**: `Closes`/`Fixes`/`Resolves #<n>` and `Refs #<n>`. Collect **every** match; a PR may legitimately link more than one issue. A **bare `#<n>` with no keyword is not an authoritative link** — treat it at most as "possibly related", never as the reviewed issue. Fetch each resolved issue with:
   ```bash
-  gh issue view <issueN> --json title,body,labels,comments,parent
+  gh issue view <issueN> --json title,body,url,labels,comments,parent
   ```
-  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) tells a child issue — part of an epic — from a standalone one, which the target-branch check in step 4 relies on.
+  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) is `{id, number, state, title, url}` or null, with no labels. A non-null parent is an **epic parent** only if it's in the issue's own repository (`.parent.url` and `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels, read by the parent's URL (never by bare number), include `epic`; check the repository first, and read labels only for a same-repository parent of a feature-branch PR:
+  ```bash
+  gh issue view <parent url> --json labels
+  ```
+  On older `gh` or GitHub Enterprise Server, the REST fallback yields `parent_issue_url`, an API URL (ending in `repos/<owner>/<repo>/issues/<parentN>`; `https://api.github.com/…` on github.com, `https://<host>/api/v3/…` on GHES): check that its `repos/<owner>/<repo>/` is the issue's repository, then read the labels with `gh api "<parent_issue_url>" --jq '[.labels[].name]'`. This decides between Epic child and Standalone in step 1, which the target-branch check in step 4 relies on.
 - **Jira**: look for a Jira key in the title or body (e.g. `[ABC-123]`). Fetch with:
   ```bash
   jira issue view <KEY>
   ```
+  Its parent is an **epic parent** only if the parent's issue type is Epic; a sub-task's parent (a Story, a Task, …) is not.
+
+If a parent lookup fails, or the parent's repository, labels, or type can't be read, stop and report; don't guess.
 
 Review the diff against **every** resolved issue. If none is found — no closing reference, no explicit `Refs`, no Jira key — add it as a blocker: a PR without a linked issue is untrackable (a bare `#<n>` mention alone doesn't count).
 

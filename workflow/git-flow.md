@@ -27,15 +27,37 @@ that it is refined per `workflow/issue-refinement.md`. If it isn't, suggest refi
 it first; if the user insists, refine it minimally on the spot.
 
 Also check whether the issue has a **parent epic** — determine this from structured data,
-not a guess:
+not a guess. The issue is a child of an epic only if it has a parent **and** that parent
+is an epic (see `workflow/epics.md`):
 
-- **GitHub**: `gh issue view <n> --json parent` — a non-null `.parent` means the issue is a
-  child of that epic (`gh` ≥ 2.94; see `workflow/issue-tracker.md`).
-- **Jira**: it has an Epic Link / parent field.
+- **GitHub** (`gh` ≥ 2.94; see `workflow/issue-tracker.md`):
+  ```bash
+  gh issue view <n> --json url,parent        # .parent → {id, number, state, title, url} or null; no labels in it
+  gh issue view <parent url> --json labels   # by the parent's URL, never by bare number
+  ```
+  The parent is an epic only if it's in the issue's own repository (`.parent.url` and
+  `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels include
+  `epic`; check the repository first and read labels only for a same-repository parent. On older `gh` or GitHub Enterprise Server, the REST fallback in
+  `workflow/issue-tracker.md` yields `parent_issue_url`, an API URL
+  (ending in `repos/<owner>/<repo>/issues/<parentN>`; `https://api.github.com/…` on github.com, `https://<host>/api/v3/…` on GHES), not a number: check
+  that its `repos/<owner>/<repo>/` is the issue's repository, then read the labels with
+  `gh api "<parent_issue_url>" --jq '[.labels[].name]'`.
+- **Jira**: the parent (Epic Link / parent field) is an epic only if its issue type is
+  Epic. A sub-task's parent (a Story, a Task, …) is not.
 
-If it does, this is a child of an epic and uses the **integration-branch flow** — steps 3
-and 6 change as noted below (see `workflow/epics.md`). If it has no parent, the flow is
-exactly as written.
+If a lookup fails, or the parent's repository, labels, or type can't be read, stop and
+report; don't guess. Otherwise:
+
+- **Parent is an epic** → this is a child of an epic and uses the **integration-branch
+  flow** — steps 3 and 6 change as noted below (see `workflow/epics.md`).
+- **No parent** → the flow is exactly as written.
+- **Parent that isn't an epic, or is in another repository** → tell the user, e.g. "#<n>
+  is a sub-issue of #<parentN>, which isn't labeled `epic`" or "#<n> is a sub-issue of
+  <owner>/<repo>#<m>, in another repository", and ask **before step 3 creates any
+  branch**. Propose the standalone flow as the default: branch off `main`, PR into `main`,
+  the standalone reference from step 6. If the user says a parent in this repository is meant to be an epic, they
+  label it `epic` themselves or approve labeling it, and the epic-child flow applies. A
+  parent in another repository can't become this repository's epic.
 
 ### 2. Pull the latest main
 
@@ -148,7 +170,7 @@ the **base branch** and the **issue reference**.
 - **Base branch**: `main` normally; the epic's integration branch (`epic/<epicN>-<slug>`)
   if the issue is a child of an epic.
 - **Issue reference** (GitHub):
-  - No parent → `Closes #<n>` so the issue closes when the PR merges into `main`.
+  - No epic parent → `Closes #<n>` so the issue closes when the PR merges into `main`.
   - Child of an epic → `Refs #<n>`, **not** `Closes`. A closing keyword only fires when the
     PR merges into the default branch, and this PR targets the epic branch. Children are
     closed later, all at once, by the `/finish-epic` PR into `main` (see `workflow/epics.md`).
