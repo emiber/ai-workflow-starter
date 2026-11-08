@@ -51,13 +51,42 @@ main
  (when the epic is done) epic/<epicN>-<slug> ──PR──▶ main
 ```
 
-- **One integration branch per epic**, named `epic/<epicN>-<slug>`.
+- **One integration branch per epic**, named `epic/<epicN>-<slug>` and identified by its
+  `epic/<epicN>-` prefix. The slug is cosmetic: it's chosen once, from the epic's title,
+  when the branch is created, and never re-derived (a title can change, and two runs can
+  slug it differently). Every lookup uses the prefix (see **Finding the integration
+  branch** below), and every later `epic/<epicN>-<slug>` in this guide (written
+  `epic/<n>-<slug>` in the `/finish-epic` section) means the branch that lookup resolved,
+  never a slug re-derived from the title.
 - It is created **lazily** — the first time a child is worked (see `git-flow.md`), not
   when the epic issue is created. Nothing exists until it's needed.
 - **Child branches** keep the normal `<type>/<childN>-<slug>` convention but are cut
   from the epic branch, and their PR targets the epic branch (`--base epic/<epicN>-<slug>`).
 - When all children are done, `/finish-epic <epicN>` opens a single PR from the epic
   branch to `main`.
+
+### Finding the integration branch
+
+Look the branch up by the epic's number, locally and on `origin`:
+
+```bash
+git fetch origin
+git for-each-ref --format='%(refname:short)' "refs/heads/epic/<epicN>-*"   # local
+git ls-remote --heads origin "refs/heads/epic/<epicN>-*"                     # origin
+```
+
+- If any of these commands exits non-zero (network, auth, missing remote), stop and
+  report the error. Only a command that succeeds with empty output means "no match".
+- Collect the distinct branch names from both outputs, after stripping `refs/heads/` from
+  the `ls-remote` lines. The same name locally and on `origin` is one branch.
+- **Exactly one** → that's the epic branch, whatever its slug. **More than one** (e.g.
+  `epic/6-foo` locally and `epic/6-bar` on `origin`) → stop and ask the user which one is
+  the epic's branch; never pick one silently. **None** → the epic has no branch yet:
+  `/work-issue` creates it for the first child (`workflow/git-flow.md` step 3), and
+  `/finish-epic` stops.
+- The `-` after the number keeps other epics out (`epic/6-*` doesn't match `epic/60-…`),
+  and the `refs/heads/` anchor stops `ls-remote` from also matching branches such as
+  `backup/epic/6-old`.
 
 ### Why child PRs use `Refs`, not `Closes` (GitHub)
 
@@ -95,22 +124,37 @@ an **open PR**; never merge, never push to `main`.
 | `main` exists, `origin` set, `gh` authenticated | as in `git-flow.md` |
 | Tracker resolved | see `workflow/issue-tracker.md` |
 | `<n>` is an epic | GitHub: has the `epic` label. Jira: is an Epic. If not, stop. |
-| Integration branch exists | `epic/<n>-<slug>` exists locally or on `origin`. If it doesn't, no child was ever worked — say so and stop. |
+| Integration branch exists | Find it by number, as in **Finding the integration branch** above. Exactly one → that's the epic branch, used by every later step. None → no child was ever worked: say so and stop. More than one → stop and ask the user which one is the epic's branch. A failed `git fetch` or `git ls-remote` → stop and report the error; it never means "no branch". |
 
 ### Steps
 
 1. **Fetch the epic and its children.** GitHub: list the epic's children (parent/child
    commands in `workflow/issue-tracker.md`). Jira: list issues with this Epic as parent.
-2. **Check children are done.** For each child, look for its PR into the epic branch. A
-   child counts as done when that PR is **merged** into `epic/<n>-<slug>` — whether or not
-   the child *issue* is still open. Leaving child issues open until the epic reaches `main`
-   is the recommended default (see above), so an open child issue whose PR is already merged
-   is **not** incomplete and must not warn. If any child's PR into the epic branch is
-   **missing, still open, closed without merging, or merged against the wrong base**,
-   **stop and report those children and do not open the integration PR** — there is no
-   "proceed anyway". The epic ships only once every child's PR is merged into the epic branch,
-   so step 4 (which closes the epic and all children) is reached only when the work is
-   actually there.
+2. **Check children are done.** List the PRs into the epic branch once, where
+   `<epic branch>` is the branch the preflight resolved:
+   ```bash
+   gh pr list --base <epic branch> --state all --limit 200 \
+     --json number,headRefName,state,mergedAt
+   ```
+   If the command exits non-zero, stop and report the error; a failed query never means a
+   child is missing. A PR belongs to child `<childN>` when its head branch matches
+   `*/<childN>-*`, the `<type>/<childN>-<slug>` convention (`*/1-*` doesn't match
+   `feat/12-…`). For each child:
+   - **Done**: at least one of its PRs is `MERGED`, whether or not the child *issue* is
+     still open. Leaving child issues open until the epic reaches `main` is the recommended
+     default (see above), so an open child issue whose PR is already merged is **not**
+     incomplete and must not warn.
+   - **Missing**: no PR matches. Report it as "missing (no PR into the epic branch; it may
+     have targeted another base)".
+   - **Not merged**: it has matching PRs, but none is merged. Report each PR's state: open,
+     or closed without merging.
+
+   If the query returned exactly 200 PRs, the list may be truncated (it's newest first, so
+   the oldest PRs drop out): report a child with no matching PR as "not found; the PR list
+   may be truncated" instead of missing. If any child isn't done, **stop and report those
+   children and do not open the integration PR** — there is no "proceed anyway". The epic
+   ships only once every child's PR is merged into the epic branch, so step 4 (which closes
+   the epic and all children) is reached only when the work is actually there.
 3. **Sync the epic branch with main.** Check out `epic/<n>-<slug>`, and merge the latest
    `main` into it so the PR diff is clean:
    ```bash

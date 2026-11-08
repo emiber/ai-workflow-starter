@@ -10,7 +10,7 @@ The same contract runs in two modes: against an **open PR** (`/review-pr <n>`, s
 
 Same checks, different inputs. You're given an issue number and a base branch:
 
-- **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, `epic/<epicN>-<slug>` → epic child.
+- **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child.
 - **Linked issue** = the issue you were given; fetch it with step 2's commands.
 - **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
@@ -41,8 +41,8 @@ gh pr view <n> --json number,title,body,baseRefName,headRefName,state,additions,
 **Classify the PR** from its head/base branches (and the linked issues' `parent`, from step 2). There are three valid shapes:
 
 - **Standalone** — feature branch → `main`; the linked issue has no `parent`; closed with `Closes`.
-- **Epic child** — feature branch → `epic/<epicN>-<slug>`; the linked issue's `parent` is that epic; referenced with `Refs`.
-- **Epic integration** — head `epic/<epicN>-<slug>` → base `main`; opened by `/finish-epic`. Its linked issues are the epic itself **plus** its children — the one explicit exception to "one PR = one issue" (see `workflow/epics.md`). Its child issues are correctly targeted here; do **not** flag them as mis-based.
+- **Epic child** — feature branch → a base starting with `epic/<parentN>-`, where `<parentN>` is the linked issue's `parent` (whatever the slug); referenced with `Refs`.
+- **Epic integration** — head starting with `epic/<epicN>-` (whatever the slug) → base `main`; opened by `/finish-epic`. Its linked issues are the epic itself **plus** its children — the one explicit exception to "one PR = one issue" (see `workflow/epics.md`). Its child issues are correctly targeted here; do **not** flag them as mis-based.
 
 Anything that fits none of these (e.g. a child branch pointing at `main`, or a mixed set of unrelated issues) → flag for manual validation.
 
@@ -86,7 +86,7 @@ Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail*
 | Tests exist for new components | For each new non-trivial file, look for a corresponding test file. A new component with no tests is a blocker. |
 | Security checklist | Apply the [Security checklist](#security-checklist) below. Any blocker it lists — including a committed secret — is a blocker. |
 | Docs updated if needed | If behavior, setup, or public interface changed, check that `README` / `docs/ARCHITECTURE.md` / inline docs were updated in the same PR. |
-| Target branch is correct | Check against the PR type from step 1: **standalone** → base `main`; **epic child** → base `epic/<epicN>-<slug>`; **epic integration** (`epic/** → main`) → base `main` is correct and its child issues are **not** mis-targeted. A base that doesn't match the PR's type is a blocker. |
+| Target branch is correct | Check against the PR type from step 1: **standalone** → base `main`; **epic child** → a base starting with `epic/<parentN>-`, where `<parentN>` is the linked issue's `parent`; **epic integration** (`epic/** → main`) → base `main` is correct and its child issues are **not** mis-targeted. A base that doesn't match the PR's type is a blocker. |
 | Linter and tests pass | Not verifiable from the diff alone — flag as **warn** and note that the author should confirm locally before requesting review. Escalate to blocker if there are obvious syntax or style violations in the diff. |
 | Coverage meets threshold | Not verifiable from the diff alone — flag as **warn** if new code paths have no visible tests, or if Verification lists new/changed files below the threshold without a reason. |
 | Verification reported | The PR body has a **Verification** section with a line for every gate in `workflow/git-flow.md` (lint, tests, coverage, self-review, security, docs), each pass or `n/a` with a reason, plus an **Out of scope / follow-ups** section. Missing section or missing gates → **warn**. A gate reported as passed that the diff contradicts (e.g. "tests: pass" with a test file deleted) → blocker. Not applicable to an epic integration PR (its children carry it). |
