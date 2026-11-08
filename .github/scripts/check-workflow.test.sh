@@ -74,7 +74,10 @@ no_name() { demo_skill 'description: Demo skill.'; }
 description_only_in_body() { printf -- '---\nname: demo\n---\n\ndescription: Only in the body.\n' > .agents/skills/demo/SKILL.md; }
 description_only_nested() { demo_skill 'name: demo' 'metadata:' '  description: Nested only.'; }
 duplicate_name_after_both() { demo_skill 'name: demo' 'description: Demo skill.' 'name: demo'; }
+duplicate_description() { demo_skill 'name: demo' 'description: Demo skill.' 'description: Again.'; }
+name_continued_on_next_line() { demo_skill 'name: demo' '  extra' 'description: Demo skill.'; }
 empty_description() { demo_skill 'name: demo' 'description:'; }
+whitespace_only_description() { demo_skill 'name: demo' 'description:   '; }
 quoted_empty_description() { demo_skill 'name: demo' 'description: ""'; }
 blank_quoted_description() { demo_skill 'name: demo' $'description: \' \t \''; }
 unquoted_number_description() { demo_skill 'name: demo' 'description: 123'; }
@@ -139,7 +142,10 @@ run_case "no name" 1 "$skill must have exactly one name: field, found 0" no_name
 run_case "description only in the body" 1 "$skill must have exactly one description: field, found 0" description_only_in_body
 run_case "description only nested" 1 "$skill must have exactly one description: field, found 0" description_only_nested
 run_case "duplicate name after both fields" 1 "$skill must have exactly one name: field, found 2" duplicate_name_after_both
+run_case "duplicate description" 1 "$skill must have exactly one description: field, found 2" duplicate_description
+run_case "name continued on the next line" 1 "$skill name: continues on the next line; write it as one line of text" name_continued_on_next_line
 run_case "empty description" 1 "$skill description: is empty" empty_description
+run_case "whitespace-only description" 1 "$skill description: is empty" whitespace_only_description
 run_case "quoted empty description" 1 "$skill description: is empty" quoted_empty_description
 run_case "whitespace-only quoted description" 1 "$skill description: is empty" blank_quoted_description
 run_case "unquoted number as description" 1 "$skill description: needs quotes; write it as one line of text" unquoted_number_description

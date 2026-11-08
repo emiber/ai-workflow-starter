@@ -39,7 +39,8 @@ read_file() {
 #     text in the Markdown body after it doesn't count.
 #   - Exactly one unindented `name:` and one unindented `description:`, in either
 #     order. Other lines (optional fields, indented/nested keys, blank lines,
-#     comment lines) are ignored.
+#     comment lines) are ignored, except an indented line that continues a
+#     required field's value (no unindented line in between): that fails.
 #   - Each is followed by a space or tab and a one-line value, with only spaces
 #     or tabs around it: plain text that starts with an ASCII letter, has no
 #     ": " or " #", doesn't end with ":" and isn't true/false/null (any case);
@@ -96,7 +97,7 @@ field_value() {
 # check_skill <SKILL.md path> <skill name>: reports every problem in the skill's
 # required frontmatter fields (see above).
 check_skill() {
-  local line opened=0 closed=0 names=0 descs=0
+  local line rest cont="" opened=0 closed=0 names=0 descs=0
   while IFS= read -r line || [ -n "$line" ]; do
     line=${line%$'\r'}
     if [ "$opened" = 0 ]; then
@@ -109,14 +110,31 @@ check_skill() {
       case "$line" in
         name:*)
           names=$((names + 1))
-          if field_value "$1" name "${line#name:}" && [ "$value" != "$2" ]; then
-            fail "$1: frontmatter name must be '$2'"
+          cont=""
+          if field_value "$1" name "${line#name:}"; then
+            cont=name
+            [ "$value" = "$2" ] || fail "$1: frontmatter name must be '$2'"
           fi
           ;;
         description:*)
           descs=$((descs + 1))
-          field_value "$1" description "${line#description:}"
+          cont=""
+          field_value "$1" description "${line#description:}" && cont=description
           ;;
+        [$ws]*)
+          # An indented line right after an accepted required field, other than
+          # a blank or comment line, continues its value: report it once.
+          if [ -n "$cont" ]; then
+            rest=$line
+            while [[ $rest == [$ws]* ]]; do rest=${rest#?}; done
+            if [ -n "$rest" ] && [ "${rest:0:1}" != "#" ]; then
+              fail "$1: frontmatter $cont: continues on the next line; write it as one line of text, plain (starting with a letter) or in '...' or \"...\" quotes"
+              cont=""
+            fi
+          fi
+          ;;
+        "") ;;
+        *) cont="" ;;
       esac
     fi
   done < "$1"
