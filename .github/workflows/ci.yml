@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   quality:
+    # Required status check on main once /init-project protects main: changing this name means updating that protection/ruleset in the same change.
     name: Quality gate — not initialized
     runs-on: ubuntu-latest
     timeout-minutes: 15

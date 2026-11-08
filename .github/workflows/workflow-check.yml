@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   workflow-integrity:
+    # Required status check on main wherever main's protection or ruleset lists it: changing this name means updating that protection/ruleset in the same change.
     name: Workflow integrity
     runs-on: ubuntu-latest
     timeout-minutes: 5
