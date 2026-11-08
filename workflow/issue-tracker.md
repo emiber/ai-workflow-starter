@@ -65,9 +65,9 @@ If the original command fails for any other reason, stop and report as usual, an
 nothing. If `gh label create` fails (e.g. not enough permission on the repo) or the retry
 fails, stop and report what's done and what's missing:
 
-- `/refine-issue`: the refined body is written; `refined` isn't applied. Once the label
-  exists (someone with write access runs its command above), it can be added by hand with
-  `gh issue edit <n> --add-label "refined"`.
+- `/refine-issue`: the refined body is written; `refined` isn't applied. If `refined` still
+  doesn't exist, someone with write access runs its command above; then it can be added by
+  hand with `gh issue edit <n> --add-label "refined"`.
 - `/create-issue`: the issue wasn't created. If `epic` still doesn't exist, show its command
   above: someone with write access must run it before the user re-runs `/create-issue`.
 
@@ -77,7 +77,7 @@ The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/a
 
 - View issue: `jira issue view <KEY>` (e.g. `jira issue view ABC-123`)
 - Edit/comment: `jira issue edit <KEY>` / `jira issue comment add <KEY>`
-- Create issue: `jira --project ABC issue create --no-input`, with `ABC` standing for `jira_project` (see **Project selection** below)
+- Create issue: `jira --project ABC issue create --no-input --type <Type> --summary '<title>' --template <file>`, with `ABC` standing for `jira_project` (see **Project selection** below)
 - Reference in PR: include the key in the PR title/body (e.g. `[ABC-123] ...`). Jira does **not** close the issue automatically via the GitHub PR unless there's an integration configured; assume closing is done by a human or Jira automation, not the flow.
 - Requires: `ankitpokhrel/jira-cli` installed and initialized via `jira init` (`jira me` to verify authentication).
 
@@ -101,9 +101,10 @@ it's the value after `jira_project=` on an uncommented line (the shipped
   `.workflow-config` needs `jira_project=<KEY>`. Don't take the key from jira-cli's
   default or from an issue key, and don't write it into the file yourself. A missing
   `issue_tracker` is a different case, handled as in **How it's resolved** above.
-- Leading or trailing whitespace, a quote (`'` or `"`), a backslash, or a control
-  character → stop and ask the user to correct the value: it can't be passed as a literal
-  key, and it's never trimmed or rewritten into another key. Don't test the value against
+- Leading or trailing whitespace, a quote (`'`, `"`, or any of `‘ ’ ‚ ‛`, which PowerShell
+  reads as single quotes), a backslash, or a control character → stop and ask the user to
+  correct the value: it can't be passed as a literal key, and it's never trimmed or
+  rewritten into another key. Don't test the value against
   a key pattern either: whether the project exists is Jira's call.
 
 **Scope each command twice.** Pass the key with jira-cli's global `--project` (`-p`) on

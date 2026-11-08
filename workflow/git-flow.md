@@ -41,7 +41,7 @@ is an epic (see `workflow/epics.md`):
   `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels include
   `epic`; check the repository first and read labels only for a same-repository parent. On older `gh` or GitHub Enterprise Server, the REST fallback in
   `workflow/issue-tracker.md` yields `parent_issue_url`, an API URL
-  (`https://api.github.com/repos/<owner>/<repo>/issues/<parentN>`), not a number: check
+  (ending in `repos/<owner>/<repo>/issues/<parentN>`; `https://api.github.com/…` on github.com, `https://<host>/api/v3/…` on GHES), not a number: check
   that its `repos/<owner>/<repo>/` is the issue's repository, then read the labels with
   `gh api "<parent_issue_url>" --jq '[.labels[].name]'`.
 - **Jira**: the parent (Epic Link / parent field) is an epic only if its issue type is

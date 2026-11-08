@@ -133,7 +133,12 @@ excluded_forms() {
     printf -- '%s\n' 'Web: https://example.test/docs/setup/missing.md and //example.test/docs/setup/missing.md' \
       '[next](https://example.test/?next=docs/setup/missing.md), [up](../guide.md), other/docs/setup/missing.md' \
       'Not checked: docs/setup/../missing.md, docs/setup/install.md/child, docs/setup/install.md?raw=1' \
-      'docs/setup/install.md.bak docs/setup/absent.md' > docs/setup/notes.md
+      'docs/setup/install.md.bak docs/setup/install.md...bak docs/setup/absent.md' > docs/setup/notes.md
+}
+trailing_ellipsis() { add_to_skill 'See docs/setup/missing.md... and then workflow/team/missing.md..'; }
+glued_forms() {
+  add_to_skill 'Not checked: --file=docs/setup/missing.md, @workflow/team/missing.md, ~~docs/setup/missing.md~~, docs/setup/missing.md:12, docs/setup/missing.md&a=1.' \
+    'Checked: docs/setup/absent.md.'
 }
 hidden_and_other_files() {
   mkdir -p docs/.drafts workflow/team &&
@@ -251,6 +256,9 @@ run_case "directory named like a guide, same line" 1 "$refs docs/folder.md, whic
 run_case "reference on a CRLF line" 1 "docs/setup/windows/crlf.md references docs/setup/gone.md, which does not exist" crlf_and_unterminated_lines
 run_case "reference on a last line without a newline" 1 "docs/setup/windows/crlf.md references workflow/team/gone.md, which does not exist" crlf_and_unterminated_lines
 run_case "excluded forms aren't checked, the reference next to them is" 1 $'::error::docs/setup/notes.md references docs/setup/absent.md, which does not exist\nWorkflow integrity: 1 problem(s) found.' excluded_forms
+run_case "reference before a trailing ellipsis" 1 "$refs docs/setup/missing.md, which does not exist" trailing_ellipsis
+run_case "reference before a trailing .. at the end of the line" 1 "$refs workflow/team/missing.md, which does not exist" trailing_ellipsis
+run_case "paths glued to = @ ~ : & aren't checked, the reference next to them is" 1 $'::error::'"$refs docs/setup/absent.md, which does not exist"$'\nWorkflow integrity: 1 problem(s) found.' glued_forms
 run_case "hidden and non-Markdown files aren't sources" 0 "Workflow integrity: OK." hidden_and_other_files
 run_case "empty guide directories" 1 "::error::$refs workflow/empty/none.md, which does not exist"$'\n'"Workflow integrity: 1 problem(s) found." empty_guide_dirs
 run_case "symlinks aren't followed or read, real dirs beside them are" 1 $'::error::docs/setup/real/guide.md references workflow/gone.md, which does not exist\nWorkflow integrity: 1 problem(s) found.' symlinks_not_followed
