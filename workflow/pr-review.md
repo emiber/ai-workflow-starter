@@ -12,9 +12,18 @@ Same checks, different inputs. You're given an issue number and a base branch:
 
 - **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the branches: base `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child, and an epic branch (`epic/<epicN>-…`) reviewed against `main` → epic integration (see **Epic integration** below).
 - **Linked issue** = the issue you were given, in the repository `/work-issue` is working in, which stands in for the PR's repository (step 1): `gh repo view --json url --jq .url` prints `https://<host>/<owner>/<repo>`, and the issue's URL is that plus `/issues/<n>`. Fetch it with step 2's commands.
-- **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
+- **Diff** = the committed change from `<base>` to `HEAD`, three-dot (from their merge base, like `git diff <base>...HEAD`), read as a **local snapshot**. Resolve both to full SHAs once, then use only those SHAs and only objects already in the repository:
+  ```bash
+  GIT_NO_LAZY_FETCH=1 git rev-parse --verify "<base>^{commit}"
+  GIT_NO_LAZY_FETCH=1 git rev-parse --verify "HEAD^{commit}"
+  GIT_NO_LAZY_FETCH=1 git merge-base <BASE_SHA> <HEAD_SHA>
+  GIT_NO_LAZY_FETCH=1 git diff --no-ext-diff --no-textconv -M --name-status <MERGE_BASE_SHA> <HEAD_SHA>
+  GIT_NO_LAZY_FETCH=1 git diff --no-ext-diff --no-textconv -M <MERGE_BASE_SHA> <HEAD_SHA>
+  GIT_NO_LAZY_FETCH=1 git show --no-textconv "<HEAD_SHA>:<path>"
+  ```
+  The first three print `<BASE_SHA>`, `<HEAD_SHA>` and `<MERGE_BASE_SHA>`. Read each changed file in full with `git show`, never from disk: uncommitted changes aren't part of the snapshot. Pick paths by status, and apply the coverage limits, as in step 3: new paths at `<HEAD_SHA>`, old paths (a `D` file, the first path of an `R` line) at `<MERGE_BASE_SHA>`. `--no-ext-diff` and `--no-textconv` keep Git from running configured diff or text-conversion programs. Never fetch or pull: with `GIT_NO_LAZY_FETCH=1` (Git 2.44 or later), a partial clone reports a missing object instead of downloading it. If a revision or object is missing, stop and report it. There's no PR to recheck in step 5.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
-- **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
+- **Output** the same report (Snapshot, Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
 - **Epic integration** — the final-revision review `/finish-epic` runs before it pushes (`workflow/epics.md` step 4), so there's no PR yet. The linked issues are the epic and the children you were given, each fetched as above; `<base>` is `origin/main`, as given, never a local `main` (`/finish-epic` doesn't update it, so it may be stale); besides `git diff <base>...HEAD`, read the merge context you were given, including each conflicted file's resolution in full. Review the conflict resolutions, the integration fixes, and how what `main` brought in meets the epic's changes, against the acceptance criteria of the epic and of the children they affect; don't re-review unchanged child work.
 
 ## Before starting: resolve the tracker
@@ -40,6 +49,12 @@ gh pr view <n> --json number,url,title,body,baseRefName,headRefName,state,additi
 ```
 
 The PR's `url` (`https://<host>/<owner>/<repo>/pull/<n>`) fixes **the PR's repository**: that host and `<owner>/<repo>`, the base repository the PR was opened in. Its issue URLs start with `https://<host>/<owner>/<repo>/issues/`. Take it from this `url` only — never from the local checkout, and, for a fork PR, never from the head (fork) repository. Step 2 addresses the PR by this URL, written `<pr-url>`.
+
+**Pin the snapshot.** The whole review reads one fixed revision of the PR, its **snapshot**. Take `<PR_HOST>` (the host) and `<PR_REPO>` (`<owner>/<repo>`) from that `url`, and read the PR once more through the REST API. Send the request to that host, with an explicit GET, never to a host or repository inferred from the local checkout:
+```bash
+gh api --hostname <PR_HOST> --method GET "repos/<PR_REPO>/pulls/<n>" --jq '{state, base_repo: .base.repo.full_name, base_ref: .base.ref, base_sha: .base.sha, head_repo: .head.repo.full_name, head_ref: .head.ref, head_sha: .head.sha, changed_files}'
+```
+This one response is the snapshot: `<BASE_REPO>` and `<HEAD_REPO>` (each `owner/repo`; for a fork PR, `<HEAD_REPO>` is the fork), the base and head branches, `<BASE_SHA>` and `<HEAD_SHA>` (full SHAs, never shortened), and the number of changed files. From here on its values are the PR's: classify the PR by its branches, and read the diff and files at its SHAs (step 3). If `state` isn't `open`, stop, as in the Preflight. If `head_repo` is null, the head repository (usually a deleted fork) is gone: stop and report that the head revision can't be read.
 
 **Classify the PR** from its head/base branches (and the linked issues' `parent`, from step 2). There are three valid shapes:
 
@@ -109,11 +124,41 @@ Review the diff against **every** resolved issue. If none is found — no closin
 
 ### 3. Fetch the diff
 
-```bash
-gh pr diff <n>
-```
+Read the diff, and every file you read in this review, from the snapshot (step 1). Never read them from the local checkout, not even when your local `HEAD` is `<HEAD_SHA>`: the working tree can hold uncommitted edits. Don't use `gh pr diff <n>` either: it shows the PR's branches as they are now, not the snapshot. Use only the read-only requests below, all sent to `<PR_HOST>` with `--method GET` (without it, `gh api` sends a POST as soon as a field such as `-f` is given). Fill in the full SHAs from the snapshot, and `<BASE_OWNER>` and `<HEAD_OWNER>`, the owners in `<BASE_REPO>` and `<HEAD_REPO>`. Quote every endpoint. Keep each response in the command output; never redirect it into a file.
 
-Read all changed files and understand what the PR actually does.
+1. **Merge base.** A PR's diff is three-dot: from the merge base of its base and head, to its head. A fork PR uses the same requests, because a fork shares its base repository's network.
+   ```bash
+   gh api --hostname <PR_HOST> --method GET "repos/<BASE_REPO>/compare/<BASE_OWNER>:<BASE_SHA>...<HEAD_OWNER>:<HEAD_SHA>" --jq '.merge_base_commit.sha'
+   ```
+   It prints `<MERGE_BASE_SHA>`.
+2. **File inventory and diff**, from `<MERGE_BASE_SHA>` to `<HEAD_SHA>`:
+   ```bash
+   gh api --hostname <PR_HOST> --method GET "repos/<BASE_REPO>/compare/<BASE_OWNER>:<MERGE_BASE_SHA>...<HEAD_OWNER>:<HEAD_SHA>" --jq '.files[] | {status, filename, previous_filename}'
+   gh api --hostname <PR_HOST> --method GET "repos/<BASE_REPO>/compare/<BASE_OWNER>:<MERGE_BASE_SHA>...<HEAD_OWNER>:<HEAD_SHA>" -H "Accept: application/vnd.github.diff"
+   ```
+   The first prints one line per changed file; their number must equal the snapshot's `changed_files`. The second prints the diff.
+3. **Full files.** Read every changed text file in full, not only its hunks, plus any unchanged file you need to understand it (a helper it calls, a test that should exist):
+   ```bash
+   gh api --hostname <PR_HOST> --method GET "repos/<SOURCE_REPO>/contents/<ENCODED_PATH>" -f "ref=<COMMIT_SHA>" -H "Accept: application/vnd.github.raw+json"
+   ```
+   - **New side:** `<SOURCE_REPO>` is `<HEAD_REPO>` and `<COMMIT_SHA>` is `<HEAD_SHA>`. For a fork PR, that's the fork. Unchanged files are read here too.
+   - **Old side:** `<SOURCE_REPO>` is `<BASE_REPO>` and `<COMMIT_SHA>` is `<MERGE_BASE_SHA>`, never `<BASE_SHA>`: if the base moved on after the PR branched off, its tip has changes the PR didn't make.
+   - **`<ENCODED_PATH>`:** percent-encode each path segment, every character except ASCII letters, digits, `-`, `.`, `_` and `~`, and keep the `/` between segments: `src/a b#1.ts` → `src/a%20b%231.ts`. This also keeps a file name from the PR from being read as shell syntax.
+
+   Which paths to read depends on each file's `status` in the inventory:
+   - `added`: `filename` at head. There's no old file.
+   - `modified` (or `changed`): `filename` at head, and at the merge base when you need the old context.
+   - `renamed` (or `copied`): `filename` at head, `previous_filename` at the merge base. A rename that the inventory shows as `removed` plus `added` is read as those two.
+   - `removed`: `filename` at the merge base only. Don't request it at head: it's meant to be gone.
+
+**Coverage limits.** Stop reading and report an **incomplete** review (see **Snapshot** in step 5) when:
+- a request fails: no access, not found, a revision that isn't available, a rate limit or network error, or a file or diff too large for the API. A 404 doesn't prove that a file was deleted; only `removed` in the inventory does;
+- the inventory lists 300 files, the compare API's cap (paging through commits doesn't lift it), or its count differs from `changed_files`;
+- the diff, or a file you need, is missing or cut short. A changed file with no hunk in the diff isn't proof that its content didn't change.
+
+Name the repository, SHA, and path or request involved, and what couldn't be verified. Don't retry in a loop, don't change `gh` authentication, and never fall back to local files or to the PR's current branches. Binary files, symlinks and submodules can't be reviewed as text: name each one as a limitation and review the rest. Reading a symlink through the API returns its target's content, not the link itself. A coverage limit isn't a code defect: don't turn it into a blocker, but never call the review complete, or the PR clean, while one stands.
+
+With the diff and the files from the snapshot, understand what the PR actually does.
 
 Then write the **PR intent** in one line: what the change is for and what it deliberately leaves alone (take it from the linked issue's Scope). It's the ruler for every scope call below: a real defect *inside* the intent can block; a valid concern *outside* it is a suggestion or a follow-up, never a reason to expand the PR.
 
@@ -151,7 +196,13 @@ Other concerns — an outbound call without a timeout, an unverified incoming we
 
 ### 5. Report
 
+**Recheck the snapshot first.** Run step 1's snapshot request again and compare the result with the snapshot. If `state` isn't `open`, or a repository, branch or SHA changed (a push or force-push to the head, a new commit on the base, a retargeted base), stop. Instead of the report below, report the captured snapshot and the current one, and say that the PR needs a fresh review. Don't present your findings as a review of the current PR, and don't start over on your own. If the recheck request fails, stop the same way and say the review couldn't be confirmed current. A match confirms that the snapshot was current when you checked, not that it will stay so.
+
 Output a structured review with the following sections:
+
+#### Snapshot
+
+What was reviewed: the PR's URL; the base (`<BASE_REPO>`, its branch, `<BASE_SHA>`), the head (`<HEAD_REPO>`, its branch, `<HEAD_SHA>`) and `<MERGE_BASE_SHA>`, all as full SHAs. In local diff mode, it's a **local snapshot**: the base name with `<BASE_SHA>`, `<HEAD_SHA>` and `<MERGE_BASE_SHA>`, committed changes only. Then the coverage: **complete**, or **incomplete**, listing each limit from step 3 (repository, SHA, path, and what couldn't be verified).
 
 #### Intent
 
@@ -172,11 +223,11 @@ Improvements worth considering but not required for merge. Same format as blocke
 
 #### Summary
 
-One short paragraph: overall assessment, whether any blockers were found, what remains unverifiable from the diff alone, and the recommended next validation step. Do not state that the PR is "ready to merge" or recommend merging — that decision belongs to the human reviewer (see Hard rules).
+One short paragraph: overall assessment, whether any blockers were found, what remains unverifiable from the diff alone, and the recommended next validation step. If coverage is incomplete (see **Snapshot**), say so here, and don't describe the review as complete or the PR as clean. Do not state that the PR is "ready to merge" or recommend merging — that decision belongs to the human reviewer (see Hard rules).
 
 ## Output conventions
 
-- Reference files with path and line number when possible.
+- Reference files with path and line number when possible, on the side they belong to: new or changed lines by their path at `<HEAD_SHA>`, removed or old lines by their merge-base path (`previous_filename` for a rename) at `<MERGE_BASE_SHA>`.
 - Name each GitHub issue by its full URL (or `<host>/<owner>/<repo>#<n>`), never by a bare `#<n>`: in AC results, unresolved references, and parent findings alike.
 - Be specific: "`src/auth.ts:42` hardcodes an API token" beats "possible secret found".
 - Group issues that trace to the same root cause instead of listing them separately.
@@ -185,5 +236,6 @@ One short paragraph: overall assessment, whether any blockers were found, what r
 ## Hard rules
 
 - Never commit, push, or modify files — this command is strictly read-only.
+- Every read is a read-only `gh` or `git` command: never check out, fetch, pull or clone the PR, add a worktree, write downloaded content to a file, run the PR's code or tests, change `gh` authentication, or write to GitHub.
 - Never auto-approve or recommend merging. Leave that decision to the human reviewer.
 - If the PR is already merged or closed, stop immediately and report without further analysis.
