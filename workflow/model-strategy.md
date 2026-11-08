@@ -47,7 +47,7 @@ Three ways, from least to most automatic:
 `opusplan` doesn't follow this table: it picks the model by plan mode, not by command, and outside plan mode every command runs on Sonnet. To follow the table:
 
 - Run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`. Plan mode isn't a substitute: these commands write files or update the tracker, and plan mode blocks file edits until you approve a plan and needs approval for commands outside its read-only set (such as `gh issue edit`).
-- Switch back with `/model opusplan` before `/work-issue`. `/model` also saves your choice as the default for new sessions, so otherwise later sessions start on Opus too.
+- Switch back with `/model opusplan` (or `/model sonnet`) before `/work-issue`, or start a fresh session with `claude --model opusplan`, so the implementation doesn't run on Opus. `/model` also saves your choice as the default for sessions started without `--model`.
 - `/work-issue`, `/finish-epic` and `/review-pr` are fine on `opusplan` or `sonnet`.
 
 One nuance: `opusplan` uses Opus only while you're in **plan mode**. The implementation plan that `/work-issue` posts for your approval is drafted by the execution model unless you switch to plan mode (Shift+Tab) for that step — worth doing for a non-trivial issue.
