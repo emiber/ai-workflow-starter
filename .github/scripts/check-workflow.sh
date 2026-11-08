@@ -188,15 +188,75 @@ for doc in CLAUDE.md AGENTS.md .github/copilot-instructions.md workflow/README.m
 done
 
 # 3. Every workflow/ or docs/ guide referenced from the workflow files exists.
-ref_re='(^|[^A-Za-z0-9_./-])((workflow|docs)/[A-Za-z0-9_-]+\.md)'
-for src in CLAUDE.md AGENTS.md .github/copilot-instructions.md .claude/commands/*.md .agents/skills/*/SKILL.md workflow/*.md docs/*.md; do
-  [ -f "$src" ] || continue
-  read_file "$src" rest
+#    Sources: the entry files, commands and skills, plus every visible *.md file
+#    under workflow/ and docs/ at any depth. The walk skips hidden entries and
+#    never enters or reads a symlink, so it can't loop.
+#    A reference is a whole path (workflow|docs)/(NAME/)*NAME.md, optionally
+#    followed by #FRAGMENT, where NAME is ASCII letters, digits, _ and -, and
+#    FRAGMENT is the same characters or nothing. Prose punctuation and Markdown
+#    such as `...` or [text](...) around it is fine. The path is resolved from
+#    the repository root and must be a regular file with no symlink anywhere in
+#    it; the fragment isn't checked. This scans raw text (code blocks included);
+#    it isn't a Markdown or link checker.
+#    Not references, so not checked at all: paths inside a larger path or URL
+#    (other/docs/x.md, https://host/docs/x.md, ?next=docs/x.md, docs/x.md.bak,
+#    docs/x.md/child, docs/x.md?raw=1), source-relative (../x.md) or absolute
+#    paths, backslashes, ., .. or empty components, names with spaces, dots or
+#    other characters, encoded names, .MD, queries, and other fragments.
+other='[^A-Za-z0-9_./\?#=&%~+:@-]' # a character that can't continue a path or URL
+ref_re='(^|'"$other"')((workflow|docs)/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.md)(#[A-Za-z0-9_-]*)?($|'"$other"'|[.:?]($|'"$other"'))'
+
+# check_refs <source>: reports every reference in <source> that isn't a regular
+# file reached without symlinks.
+check_refs() {
+  local rest ref part left
+  if [ ! -r "$1" ]; then
+    fail "$1 isn't readable, so its guide references can't be checked"
+    return
+  fi
+  read_file "$1" rest
   while [[ $rest =~ $ref_re ]]; do
     ref=${BASH_REMATCH[2]}
-    [ -f "$ref" ] || fail "$src references $ref, which does not exist"
     rest=${rest#*"${BASH_REMATCH[0]}"}
+    part=${ref%%/*}
+    left=${ref#*/}
+    until [ -L "$part" ] || [ "$part" = "$ref" ]; do
+      part+=/${left%%/*}
+      left=${left#*/}
+    done
+    if [ -L "$part" ]; then
+      fail "$1 references $ref, but $part is a symlink; symlinked guide paths aren't supported"
+    elif [ ! -f "$ref" ]; then
+      fail "$1 references $ref, which does not exist"
+    fi
   done
+}
+
+# check_guides <dir>: runs check_refs on every visible *.md file in <dir> and
+# its visible subdirectories. Symlinks are skipped, never followed.
+check_guides() {
+  local e
+  if [ ! -r "$1" ] || [ ! -x "$1" ]; then
+    fail "$1 isn't readable, so the guides in it can't be checked"
+    return
+  fi
+  for e in "$1"/*; do
+    if [ -L "$e" ]; then
+      continue
+    elif [ -d "$e" ]; then
+      check_guides "$e"
+    elif [[ $e == *.md ]] && [ -f "$e" ]; then
+      check_refs "$e"
+    fi
+  done
+}
+
+for src in CLAUDE.md AGENTS.md .github/copilot-instructions.md .claude/commands/*.md .agents/skills/*/SKILL.md; do
+  [ -f "$src" ] || continue
+  check_refs "$src"
+done
+for root in workflow docs; do
+  [ -d "$root" ] && [ ! -L "$root" ] && check_guides "$root"
 done
 
 # 4. .workflow-config names a supported tracker.
