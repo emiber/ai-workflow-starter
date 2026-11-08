@@ -136,7 +136,7 @@ an **open PR**; never merge, never push to `main`.
    even children from pages that succeeded, and stop: report the epic and the error.
    Nothing below — the done check, the sync and push, the `Closes` lines, the PR — runs on
    a failed or partial list. Jira: list issues with this Epic as parent. The result is
-   **the child list**, each child once; steps 2 and 4 both use it.
+   **the child list**, each child once; steps 2 and 5 both use it.
 2. **Check children are done.** List the PRs into the epic branch once, where
    `<epic branch>` is the branch the preflight resolved:
    ```bash
@@ -160,22 +160,22 @@ an **open PR**; never merge, never push to `main`.
    the oldest PRs drop out): report a child with no matching PR as "not found; the PR list
    may be truncated" instead of missing. If any child isn't done, **stop and report those
    children and do not open the integration PR** — there is no "proceed anyway". The epic
-   ships only once every child's PR is merged into the epic branch, so step 4 (which closes
+   ships only once every child's PR is merged into the epic branch, so step 5 (which closes
    the epic and all children) is reached only when the work is actually there.
 3. **Sync the epic branch with main.** Bring the local epic branch up to date with
-   `origin`, then merge the latest `main` into it so the PR diff is clean:
+   `origin`, then merge the latest `main` into it so the PR diff is clean. Nothing is
+   pushed here: step 4 validates the result first, and step 5 pushes it.
    ```bash
    git fetch origin
    git checkout epic/<n>-<slug>
    git merge-base --is-ancestor HEAD origin/epic/<n>-<slug>   # non-zero → stop and report
    git pull --ff-only origin epic/<n>-<slug>
    git merge origin/main        # resolve conflicts here if any; never force
-   git push origin epic/<n>-<slug>
    ```
    - The local copy is usually behind `origin` (it was last pulled when the last child's
-     branch was cut, before that child's PR merged), so the pull fast-forwards it and the
-     push stays a fast-forward. With no local copy, the checkout creates one tracking
-     `origin/epic/<n>-<slug>`, which the fetch has just updated.
+     branch was cut, before that child's PR merged), so the pull fast-forwards it and
+     step 5's push stays a fast-forward. With no local copy, the checkout creates one
+     tracking `origin/epic/<n>-<slug>`, which the fetch has just updated.
    - **Ancestry check** (the `git merge-base --is-ancestor` line). It runs after the
      checkout, so that `HEAD` is the epic branch, and before the pull. Exit 0: the local
      branch is equal to or behind `origin`; go on. Non-zero: the local branch has commits
@@ -184,13 +184,70 @@ an **open PR**; never merge, never push to `main`.
      (`git log --oneline origin/epic/<n>-<slug>..HEAD`) or the error; the user decides
      whether to push or drop them. Never reset, rebase, or force-push the shared epic
      branch. `git pull --ff-only` alone doesn't catch this: on a branch that is only ahead
-     it reports "Already up to date" and exits 0, and the push would then publish those
-     commits.
-   - A no-op isn't a failure: a pull or merge that reports "Already up to date", or a push
-     that reports "Everything up-to-date", means there was nothing to bring in; go on.
-   - If there are conflicts you can't resolve safely, stop and report.
-4. **Open the integration PR.**
+     it reports "Already up to date" and exits 0, and step 5's push would then publish
+     those commits. A pass in step 4 never waives this stop, even for commits an earlier
+     run validated: it covers only what this run adds after the check.
+   - A no-op isn't a failure: a pull or merge that reports "Already up to date" means
+     there was nothing to bring in; go on. Step 4 still runs.
+   - Resolve any conflicts and commit the merge before step 4: it validates a commit,
+     never a half-merged tree. If there are conflicts you can't resolve safely, stop and
+     report.
+4. **Validate the final revision.** Each child's PR was checked on its own, but merging
+   `main` can still break the combined result (e.g. `main` changed an interface a child
+   uses). Before anything is pushed, check the exact commit step 5 will publish, in this
+   run — also when step 3's merge was conflict-free or "Already up to date". A child's
+   Verification, an earlier run, or green CI never counts as this check.
+   - **Candidate.** `git status --porcelain` prints nothing (no unresolved conflict,
+     nothing uncommitted) and `git rev-parse HEAD` gives the candidate SHA. Every result
+     below holds for that SHA only.
+   - **Quality gate**, as in `workflow/git-flow.md` step 4: the complete lint and
+     test-with-coverage commands from the **Quality gate** section of
+     `docs/ARCHITECTURE.md` — the ones CI runs, not just the tests near the conflicts —
+     plus the other checks CI runs on a PR into `main` (e.g. the workflow integrity
+     checks, `bash .github/scripts/check-workflow.test.sh` and
+     `bash .github/scripts/check-workflow.sh`). If the commands aren't recorded, take
+     them from the project's own scripts, configuration and CI, never from the
+     template's examples. Total coverage must meet the recorded threshold (default 85%).
+     List each new or changed source file in the epic's diff
+     (`git diff origin/main...HEAD`) that is below it, with the reason, and add tests
+     unless there's a real reason not to; a per-file reason never waives the total.
+   - **Integration review**, read-only, following `workflow/pr-review.md` in local diff
+     mode as an **epic integration**. As in `workflow/git-flow.md` step 5, give a fresh
+     agent only the epic, its child list (step 1), the candidate SHA and the merge
+     context; if you can't start one, run the review yourself and record it as inline.
+     The merge context is `git diff origin/epic/<n>-<slug> HEAD` (all this run adds to
+     the published epic: what `main` brought in, the conflict resolutions, any fixes)
+     and, if step 3 made a merge commit `<merge>`, `git show --cc <merge>` (only the
+     hunks that differ from both parents: the manual resolutions). The review checks
+     these, and how they meet the epic's own changes, against the acceptance criteria
+     of the epic and of the children they affect — correctness, security, docs —
+     reading the affected files in full. It doesn't re-review unchanged child work.
+     With no conflicts it still checks those interactions and records "no manual
+     resolutions"; with nothing new from `main`, it records that. It reports; it
+     doesn't fix.
+   - **Any change starts the check again.** A fix for a gate failure or a review blocker
+     (only within the epic's scope; anything else is reported, not fixed), or a file a
+     formatter or hook changes, makes a new candidate: commit it on the epic branch and
+     go back to **Candidate** — the full gate again, and the review refreshed for what
+     changed. Results for an older SHA, or for a tree that differs from it, never
+     authorize step 5.
+   - **Stop before any push or PR** when a lint or test command fails, total coverage is
+     below the threshold, an applicable gate couldn't run, conflicts are unresolved, or
+     review blockers remain. Report the command or check, the failure or what kept it
+     from running, and the next action. A gate that applies but can't be found or run
+     (missing tool or dependency, sandbox limit, no coverage output, no time) is
+     **blocked**, never passed and never `n/a`. `n/a` fits only a gate that doesn't
+     apply to the whole integrated project, with the concrete reason (e.g. no
+     application code yet, so no lint, test or coverage command exists; the checks CI
+     does run still run); docs-only changes don't waive a configured check. Never weaken
+     tests, lower the threshold, skip hooks, or reset, rebase or force-push. The merge
+     and any fix commits stay local, so the next run stops at step 3's ancestry check
+     until the user pushes or drops them; there's no automatic resume.
+5. **Push and open the integration PR**, only for the commit step 4 validated:
    ```bash
+   git status --porcelain       # must print nothing
+   git rev-parse HEAD           # must be the SHA step 4 validated; if not, back to step 4
+   git push origin epic/<n>-<slug>
    gh pr create \
      --base main \
      --head epic/<n>-<slug> \
@@ -205,18 +262,45 @@ an **open PR**; never merge, never push to `main`.
 
    ## Children
    - #<child1> <title>
-   - #<child2> <title>"
+   - #<child2> <title>
+
+   ## Verification
+   Validated revision: <SHA from step 4>
+   - Lint: <command> — pass | n/a (<reason>)
+   - Tests: <command(s)> — pass | n/a (<reason>)
+   - Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason> | n/a (<reason>)
+   - Self-review: integration review of <the manual resolutions | no manual resolutions>, <the integration fixes | no fixes> and what main brought in; blockers: <found and fixed | none>; suggestions not applied: <list | none> (separate agent | inline)
+   - Security: pass (<what the integration touched>) | no security surface touched by the integration
+   - Docs: updated <files> | not needed (<reason>)
+
+   ## Out of scope / follow-ups
+   None | - <item>"
    ```
    Write one `Closes #<child>` line per child in the child list (step 1), the same list
    step 2 checked: every child, each exactly once.
 
+   **Verification** reports step 4 for the validated SHA, under the rules of
+   `workflow/git-flow.md` step 6: every gate gets a line, a pass only if it ran in this
+   run on that SHA, `n/a` only with its concrete reason. Put checks such as the workflow
+   integrity checks on the Tests line. Security and Docs describe what the integration
+   changed, not repeats of the children's reviews. Never paste credentials or sensitive
+   output. The Children list links the children's work; it never replaces this evidence.
+   - A push that reports "Everything up-to-date" isn't a failure: go on.
+   - If the push is rejected (e.g. someone pushed to the epic branch after step 3's
+     fetch), stop and report; don't open the PR, and never force-push. Anything that
+     changes the candidate needs step 4 again before another push.
+   - If `gh pr create` fails after the push, report it as it is: the branch is pushed,
+     the PR isn't open. Don't undo the push.
+
    On Jira, drop the `Closes` lines, put the Epic key in the title (`[ABC-123] ...`), and
    list child keys in the body.
-5. **Don't merge.** Leave the PR open for human review and return its link.
+6. **Don't merge.** Leave the PR open for human review and return its link.
 
 ### Hard rules (same spirit as `git-flow.md`)
 
 - Never merge or push to `main` directly; the epic ships via this open PR.
 - Never `git push --force` to the epic branch (it's shared — children branch off it).
+- Never push the epic branch or open the integration PR before step 4 has passed for the
+  exact commit being pushed.
 - Never auto-merge, never skip hooks, never weaken tests.
 - If any step fails, stop and report; don't improvise destructive workarounds.

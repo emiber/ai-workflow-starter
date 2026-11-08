@@ -10,11 +10,12 @@ The same contract runs in two modes: against an **open PR** (`/review-pr <n>`, s
 
 Same checks, different inputs. You're given an issue number and a base branch:
 
-- **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child.
+- **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the branches: base `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child, and an epic branch (`epic/<epicN>-…`) reviewed against `main` → epic integration (see **Epic integration** below).
 - **Linked issue** = the issue you were given, in the repository `/work-issue` is working in, which stands in for the PR's repository (step 1): `gh repo view --json url --jq .url` prints `https://<host>/<owner>/<repo>`, and the issue's URL is that plus `/issues/<n>`. Fetch it with step 2's commands.
 - **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
 - **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
+- **Epic integration** — the final-revision review `/finish-epic` runs before it pushes (`workflow/epics.md` step 4), so there's no PR yet. The linked issues are the epic and the children you were given, each fetched as above; besides `git diff <base>...HEAD`, read the merge context you were given. Review the conflict resolutions, the integration fixes, and how what `main` brought in meets the epic's changes, against the acceptance criteria of the epic and of the children they affect; don't re-review unchanged child work.
 
 ## Before starting: resolve the tracker
 
@@ -129,7 +130,7 @@ Go through each item from `workflow/git-flow.md`. Mark each as **pass**, **fail*
 | Target branch is correct | Check against the PR type from step 1: **standalone** → base `main`; **epic child** → a base starting with `epic/<parentN>-`, where `<parentN>` is the linked issue's `parent`; **epic integration** (`epic/** → main`) → base `main` is correct and its child issues are **not** mis-targeted. A base that doesn't match the PR's type is a blocker. A linked issue past the **Repository boundary** (step 1) → **warn**, naming it and its parent by URL, with manual validation of the base: never pass, and never a wrong-base blocker on that account. |
 | Linter and tests pass | Not verifiable from the diff alone — flag as **warn** and note that the author should confirm locally before requesting review. Escalate to blocker if there are obvious syntax or style violations in the diff. |
 | Coverage meets threshold | Not verifiable from the diff alone — flag as **warn** if new code paths have no visible tests, or if Verification lists new/changed files below the threshold without a reason. |
-| Verification reported | The PR body has a **Verification** section with a line for every gate in `workflow/git-flow.md` (lint, tests, coverage, self-review, security, docs), each pass or `n/a` with a reason, plus an **Out of scope / follow-ups** section. Missing section or missing gates → **warn**. A gate reported as passed that the diff contradicts (e.g. "tests: pass" with a test file deleted) → blocker. Not applicable to an epic integration PR (its children carry it). |
+| Verification reported | The PR body has a **Verification** section with a line for every gate in `workflow/git-flow.md` (lint, tests, coverage, self-review, security, docs), each pass or `n/a` with a reason, plus an **Out of scope / follow-ups** section. Missing section or missing gates → **warn**. A gate reported as passed that the diff contradicts (e.g. "tests: pass" with a test file deleted) → blocker. An epic integration PR reports it too, for the revision `/finish-epic` validated (`workflow/epics.md` step 5); links to its children's PRs don't replace it. |
 
 Plan approval and the self-review leave no trace in the diff; the Verification section's self-review line is the only evidence of the latter — don't mark either as pass or fail on your own.
 
