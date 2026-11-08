@@ -11,7 +11,16 @@ It gives you two things:
 
 ## Getting started
 
-1. **Copy this repo** as the base of your new project (clone it, or copy its contents into your project folder).
+1. **Create your own repo from this one** — on GitHub, click **Use this template** → **Create a new repository**, then clone *your* new repo and work in that clone. It has fresh history, your own `origin`, and `main` already on GitHub, which `/init-project` needs to protect `main` and land the scaffold. Don't use a plain `git clone` of this repo: its `origin` is the starter, so `/init-project` won't protect `main` or open the scaffold's PR there.
+
+   Can't use the template? Copy this repo's files without its `.git` folder (e.g. **Code → Download ZIP**), create an empty repo on GitHub (no README, license or `.gitignore`), and push the starter files as its initial `main` yourself:
+   ```
+   git init -b main
+   git add -A
+   git commit -m "chore: start from the AI Workflow Starter"
+   git remote add origin <your-repo-url>
+   git push -u origin main
+   ```
 2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated. For Jira issues, also the `jira` CLI. See [Git flow requirements](#git-flow-requirements).
 3. **Open Claude Code** in the folder, ideally with `opusplan` as the session model (details in `workflow/model-strategy.md`):
    ```bash
@@ -22,8 +31,9 @@ It gives you two things:
    ```
    /init-project
    ```
-5. **Protect `main`** — `/init-project` attempts to enable branch protection on `main` automatically (require a PR, require CI to pass, block direct pushes). If it couldn't — the repo isn't on GitHub yet, or you lack admin — enable it by hand in repo **Settings → Branches**: add a rule for `main` that requires a pull request, requires the CI check to pass, and disallows direct pushes. This is what makes "never push to `main`" real instead of just a convention.
-6. **Work in the issue → PR loop** — create an issue (optional), refine it, then implement it:
+5. **Protect `main`** — `/init-project` shows the repo it resolved from your `origin` and, on your yes, enables branch protection on its `main` (require a PR, require CI to pass, block direct pushes). If it couldn't — `origin` isn't a single github.com repo of yours, `main` isn't on GitHub yet, you said no, or you lack admin — enable it by hand in repo **Settings → Branches**: add a rule for `main` that requires a pull request, requires the CI check to pass, and disallows direct pushes. This is what makes "never push to `main`" real instead of just a convention.
+6. **Land the scaffold through a PR** — `/init-project` leaves the generated files uncommitted, then offers to commit them on a `chore/init-project` branch, push it, and open a PR into `main`. It does that only on your yes, and never pushes to `main`. That PR is the scaffold's first CI run: merge it before you start the issue → PR loop. If it can't offer (step 5's repo check failed, `main` isn't on GitHub, or the quality gate didn't pass), it says what to fix and prints the commands to run once you have.
+7. **Work in the issue → PR loop** — create an issue (optional), refine it, then implement it:
    ```
    /create-issue "contacts list not paginating past page 2"
    /refine-issue 42

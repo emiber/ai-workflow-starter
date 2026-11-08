@@ -116,13 +116,27 @@ Only after the user confirms (or after arriving here from the pre-check with an 
 
 ### 5. Enable branch protection on `main`
 
-After generation, protect `main` at the platform so the "never push/merge to `main`" rule is enforced by GitHub, not just by agent discipline (a direct push otherwise runs no CI and nothing blocks it). **Attempt** it automatically; never fail the whole scaffold if it can't be done.
+After generation, protect `main` at the platform so the "never push/merge to `main`" rule is enforced by GitHub, not just by agent discipline (a direct push otherwise runs no CI and nothing blocks it). **Attempt** it on the user's own repo, after their yes; never fail the whole scaffold if it can't be done. Whenever this step doesn't apply protection, say why, print the manual steps from sub-step 7, and continue. Automatic protection, and the landing after the integrity check, support github.com only: every `gh api` call in this step passes `--hostname github.com`, so no request can reach a same-named repo on another server.
 
 1. Determine the required CI check name — it is the **job name** set in `.github/workflows/ci.yml` (you renamed it from the template placeholder to a real name in step 4b). The required status check context must match it **exactly**, or the gate isn't enforced.
-2. Attempt to enable protection on `main` via `gh api` (classic branch protection shown; a ruleset works too):
+2. **Resolve the target repo** from where `git push origin` actually publishes: `git remote get-url --push --all origin` prints one push URL per line. The target check passes only if all the points below hold, in this order. At the first one that doesn't, say why and stop the check: no further `gh` call in this step, and no landing offer later. Never change a remote or gh's config yourself; tell the user the fix.
+   - **`origin` exists.** If the command fails, there's no `origin` remote: say to create the user's own GitHub repo and add it with `git remote add origin <url>` (see `workflow/README.md` "Getting started").
+   - **It has exactly one push URL.** `git push origin` publishes to every one, so a second URL could publish to a repo nobody checked. If there are several, list the destinations (reduced as below), say that only one push destination is supported, and that the user can remove the extra ones with `git remote set-url --delete --push origin <url>`.
+   - **That URL is on `github.com`.** Reduce it as below. If its host is another one (e.g. GitHub Enterprise Server), or it can't be reduced, say that automatic protection and landing support a single github.com push URL only.
+   - **The repo resolves.** Run `gh repo view github.com/<owner>/<name> --json nameWithOwner --jq .nameWithOwner` with the reduced form, never the raw URL. It prints the canonical `<owner>/<name>`, whatever the URL's spelling (HTTPS or SSH, any case). If it fails (no such repo, `gh` not authenticated), report its error.
+   - **It isn't the starter.** If the result is `emiber/ai-workflow-starter`, the clone still points at the starter: say so, and that the fix is the user's own repo (made from the template, or created empty; see "Getting started"), set as `origin` with `git remote set-url origin <url>`.
+   - **gh agrees.** `gh api --hostname github.com "repos/{owner}/{repo}" --jq .full_name` prints gh's implicit repo, the one later `gh` commands use (e.g. `/work-issue`'s `gh pr create`). It must be the same `<owner>/<name>`. If it names another repo (picked through `GH_REPO`, `gh repo set-default`, an `upstream` remote, or a `pushurl` to another repo), or fails, print both names (or its error) and the fixes: `gh repo set-default <owner>/<name>`, unset `GH_REPO`, or fix `origin`'s URLs.
+
+   Compare repos as `<owner>/<name>`, never as URL strings: with `pushInsteadOf`, one repo can have an HTTPS fetch URL and an SSH push URL.
+
+   **Never show a raw remote URL**, in a message, a report, or another command. An HTTPS URL can embed a credential (`https://user:token@github.com/…`), and `git remote get-url` prints it unchanged. Reduce each destination to `<host>/<owner>/<name>`: drop the scheme, any user-info (everything up to the `@`), any port, a trailing `.git`, and any query (`?…`) or fragment (`#…`). For example, `git@github.com:acme/app.git` becomes `github.com/acme/app`. If a URL can't be reduced that way (e.g. a local path), show only how many destinations there are and say one was withheld.
+3. **Show the target.** Print `Target repo: <owner>/<name>`. From here on, write that name in every command, never the `{owner}/{repo}` placeholder.
+4. **Check that `main` is on GitHub:** `gh api --hostname github.com "repos/<owner>/<name>/branches/main" --jq .name`. If it answers `404 Branch not found`, skip the protection call and say `main` must be pushed first (see "Getting started"). If it fails another way, skip the call too and report the error. Either way, landing won't be offered.
+5. **Ask before applying**, naming the repo: "Apply branch protection to `main` on `<owner>/<name>`?" Go on only on an explicit yes. Anything else is a no: print the manual steps and continue.
+6. Enable protection on `main` via `gh api` (classic branch protection shown; a ruleset works too):
 
    ```bash
-   gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" --input - <<'JSON'
+   gh api --hostname github.com -X PUT "repos/<owner>/<name>/branches/main/protection" --input - <<'JSON'
    {
      "required_status_checks": { "strict": true, "contexts": ["<CI job name>"] },
      "enforce_admins": true,
@@ -133,7 +147,7 @@ After generation, protect `main` at the platform so the "never push/merge to `ma
    ```
 
    `required_approving_review_count: 0` requires a PR without locking out a solo maintainer (who can't approve their own PR); raise it for a team that wants mandatory review. `enforce_admins: true` blocks direct pushes to `main` even for admins — that is the point.
-3. **On failure — do not abort.** If the call fails (the repo isn't on GitHub yet, you lack admin, or the plan doesn't support protection), warn and print the exact manual steps instead of erroring out:
+7. **On failure — do not abort.** If the call fails (the repo isn't on GitHub yet, you lack admin, or the plan doesn't support protection), warn and print the exact manual steps instead of erroring out:
    > Couldn't enable branch protection automatically. Enable it by hand: repo **Settings → Branches → Add branch ruleset** (or **Add rule**) for `main` — require a pull request before merging, require the status check **<CI job name>** to pass, and block direct pushes (including admins). See `workflow/README.md` "Getting started".
 
 ## Golden rule
@@ -158,3 +172,25 @@ After scaffolding, do a self-check (no tooling beyond the project's own — just
    - **Report** the result of lint and of tests with coverage, naming each command: pass, fail with its output, or "not run: <reason>". The quality gate has passed only when both passed in this run; a gate that still fails, or wasn't run, hasn't passed.
 
 Report anything still off; don't silently leave the template half-initialized.
+
+## Land the scaffold
+
+After the Template integrity check, tell the user the scaffold is still uncommitted: `/init-project` doesn't commit or push unless they ask (`workflow/rules.md`). Then check the landing gate. All three must hold:
+
+- step 5's target check passed: `origin` has exactly one push URL, on `github.com`; it isn't the starter; and gh's implicit repo is the same `<owner>/<name>`;
+- `main` exists on GitHub (step 5's sub-step 4 found it);
+- the quality gate passed, as the last sentence of integrity item 6 defines it: lint and tests with coverage both passed in this run.
+
+**If one doesn't hold, don't offer landing.** Say what must be fixed or must pass first (for the quality gate, name each command that failed or wasn't run), print the commands below for later, and stop. The files stay uncommitted.
+
+**If all three hold,** first run `git status --short`: `git add -A` stages everything it lists. If the gate run left anything there besides the lockfile (a dependency folder such as `node_modules/` or `.venv/`, tool caches, coverage output), add it to the stack-specific entries 4b added to `.gitignore`. Then show these exact commands, with step 5's `<owner>/<name>`, and offer to run them:
+
+```
+git checkout -b chore/init-project
+git add -A
+git commit -m "chore: scaffold the project"
+git push -u origin chore/init-project
+gh pr create --repo github.com/<owner>/<name> --base main --head chore/init-project --title "chore: scaffold the project" --body "Project scaffold generated by /init-project."
+```
+
+Run them only on an explicit yes, then return the PR link. On anything else, print them and stop; the files stay uncommitted. Never push to `main`: the scaffold reaches it only through this PR, which is also its first run of `ci.yml` and `workflow-check.yml`.
