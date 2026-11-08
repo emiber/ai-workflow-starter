@@ -9,7 +9,7 @@ Review the target open PR (its number — provided as the argument, or stated by
 
 1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/pr-review.md`, `workflow/git-flow.md` (for the Definition of Done), and `workflow/issue-tracker.md`.
 2. Run the preflight from `workflow/pr-review.md`. It's read-only — if one fails, stop and report the fix. It confirms `gh` is authenticated and the PR exists and is open (if merged/closed, stop — there's nothing to review).
-3. Fetch the PR, find and fetch its linked issue(s) (GitHub `Closes/Refs #<n>`, or a Jira key), and read the diff. Write the PR intent — what it's for and what it deliberately leaves alone — and judge scope against it.
+3. Fetch the PR, find and fetch its linked issue(s) (GitHub `Closes/Refs #<n>`, or a Jira key), and read the diff. Classify it (standalone, epic child, or epic integration) per `workflow/pr-review.md` step 1: a feature-branch PR is an epic child only if the linked issue's parent is an epic — on GitHub, in the issue's own repository and labeled `epic` (read by the parent's URL); on Jira, of type Epic — and any other parent makes it standalone, noted in the report without asking. Write the PR intent — what it's for and what it deliberately leaves alone — and judge scope against it.
 4. Check each Definition of Done item from `workflow/git-flow.md`, including the **Security checklist** and the PR's **Verification** section: mark **pass**, **fail** (blocker), or **warn** (unverifiable from the diff alone).
 5. Report the structured review: **Intent**, **Blockers**, **Suggestions**, and a **Summary**. Report blockers and unverifiable items; never recommend or make the merge decision — that belongs to the human reviewer.
 
