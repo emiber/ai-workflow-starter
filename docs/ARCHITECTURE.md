@@ -20,5 +20,8 @@ _(pending)_
 - **Test-with-coverage command:** _(pending — e.g. `npx vitest run --coverage`, `pytest --cov --cov-fail-under=85`)_
 - Enforced identically in local scripts and in CI (`.github/workflows/ci.yml`): CI runs these same commands, and `/work-issue` runs them before every PR.
 
+## License
+_(pending)_
+
 ## Deferred decisions
 _(things we decided NOT to include now and why)_

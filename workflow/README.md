@@ -91,6 +91,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 ```
 .
 ├── README.md                       # The project's own README (placeholder until /init-project fills it)
+├── LICENSE                         # Starter's MIT license — /init-project moves it to workflow/LICENSE and writes the project's own, if any
 ├── CLAUDE.md                       # Pointer + rules for Claude Code
 ├── AGENTS.md                       # Pointer for Codex
 ├── .gitignore                      # Safe baseline (/init-project extends it per stack)
