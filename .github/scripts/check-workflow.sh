@@ -193,8 +193,9 @@ done
 #    never enters or reads a symlink, so it can't loop.
 #    A reference is a whole path (workflow|docs)/(NAME/)*NAME.md, optionally
 #    followed by #FRAGMENT, where NAME is ASCII letters, digits, _ and -, and
-#    FRAGMENT is the same characters or nothing. Prose punctuation and Markdown
-#    such as `...` or [text](...) around it is fine. The path is resolved from
+#    FRAGMENT is the same characters or nothing. Prose punctuation around it is
+#    fine, including a sentence-final ., ..., : or ?, and so are backticks and
+#    Markdown such as [text](...). The path is resolved from
 #    the repository root and must be a regular file with no symlink anywhere in
 #    it; the fragment isn't checked. This scans raw text (code blocks included);
 #    it isn't a Markdown or link checker.
@@ -203,8 +204,13 @@ done
 #    docs/x.md/child, docs/x.md?raw=1), source-relative (../x.md) or absolute
 #    paths, backslashes, ., .. or empty components, names with spaces, dots or
 #    other characters, encoded names, .MD, queries, and other fragments.
+#    Also not checked: a path glued to one of = & % ~ + : @ on either side
+#    (key=docs/x.md, --file=docs/x.md, @docs/x.md, ~~docs/x.md~~, docs/x.md:12,
+#    docs/x.md&a=1). They share one class with the URL characters because a
+#    query value (?next=docs/x.md) can't be told apart from key=docs/x.md
+#    without parsing the URL.
 other='[^A-Za-z0-9_./\?#=&%~+:@-]' # a character that can't continue a path or URL
-ref_re='(^|'"$other"')((workflow|docs)/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.md)(#[A-Za-z0-9_-]*)?($|'"$other"'|[.:?]($|'"$other"'))'
+ref_re='(^|'"$other"')((workflow|docs)/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.md)(#[A-Za-z0-9_-]*)?($|'"$other"'|(\.+|[:?])($|'"$other"'))'
 
 # check_refs <source>: reports every reference in <source> that isn't a regular
 # file reached without symlinks.
