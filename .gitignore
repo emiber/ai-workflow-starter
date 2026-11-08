@@ -1,6 +1,12 @@
 # Safe baseline .gitignore for the AI Workflow Starter.
 # /init-project EXTENDS this file with entries for the chosen stack — it must
 # not replace it. Keep these stack-agnostic essentials at the top.
+#
+# Rule: the patterns in this baseline must never match ordinary source files.
+# So the generic output folder names (build, dist, out, tmp, temp, logs,
+# coverage) are root-only (/build/, /dist/, ...). Nested ones (e.g. in monorepo
+# packages) and archives (*.zip, *.tgz, ...) are stack-specific: they belong in
+# the section at the end that /init-project adds.
 
 # ── Environment & secrets ─────────────────────────────────────────────────
 # Never commit real secrets. Keep them in .env (gitignored) and document the
@@ -19,8 +25,19 @@
 id_rsa
 id_dsa
 *.crt
-secrets.*
-credentials.*
+secrets.json
+secrets.yml
+secrets.yaml
+secrets.toml
+secrets.env
+secrets.ini
+credentials.json
+credentials.yml
+credentials.yaml
+credentials.toml
+credentials.env
+credentials.ini
+credentials.csv
 .netrc
 
 # ── OS junk ───────────────────────────────────────────────────────────────
@@ -51,26 +68,18 @@ desktop.ini
 
 # ── Logs ──────────────────────────────────────────────────────────────────
 *.log
-logs/
+/logs/
 
 # ── Caches, build output & coverage (generic; stack-specific ones go below) ─
 .cache/
-tmp/
-temp/
-dist/
-build/
-out/
-coverage/
+/tmp/
+/temp/
+/dist/
+/build/
+/out/
+/coverage/
 .coverage
 htmlcov/
 
-# ── Generated distribution archives ───────────────────────────────────────
-*.zip
-*.tar
-*.tar.gz
-*.tgz
-*.rar
-*.7z
-
 # ── Stack-specific entries (added by /init-project) ───────────────────────
-# e.g. node_modules/, __pycache__/, target/, vendor/, .venv/ ...
+# e.g. node_modules/, __pycache__/, target/, vendor/, .venv/, packages/*/dist/ ...

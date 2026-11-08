@@ -9,7 +9,7 @@ Before starting the question flow, check whether `docs/ARCHITECTURE.md` already 
 - **If it exists:** show its contents to the user and ask:
   > `docs/ARCHITECTURE.md` already exists. Do you want to **(a)** redo the design questions and overwrite it, or **(b)** skip to code generation using the existing file?
   - Answer **a** → proceed with the full question flow below, then overwrite the file.
-  - Answer **b** → before entering 4b, do a quick sanity check of the file: warn the user if it contains any `_(pending)_` placeholders or is missing a coverage threshold or the Quality gate commands, and ask them to fix those before continuing. Also warn: step 4b will regenerate all base files (README, `.gitignore`, `ci.yml`, etc.) from the existing `ARCHITECTURE.md` — any manual edits to those files will be overwritten. Confirm the user is aware before proceeding. If they confirm, skip directly to **step 4b**.
+  - Answer **b** → before entering 4b, do a quick sanity check of the file: warn the user if it contains any `_(pending)_` placeholders or is missing a coverage threshold or the Quality gate commands, and ask them to fix those before continuing. Also warn: step 4b will regenerate the base files (README, `ci.yml`, etc.) from the existing `ARCHITECTURE.md` — any manual edits to those files will be overwritten. The baseline `.gitignore` is the exception: 4b extends it with stack-specific entries instead of regenerating it. Confirm the user is aware before proceeding. If they confirm, skip directly to **step 4b**.
   - **Any other answer** → re-ask with the same two options.
 - **If it does not exist:** proceed with the full question flow below.
 
