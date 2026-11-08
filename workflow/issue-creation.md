@@ -91,7 +91,8 @@ If step 3 decided this is an **epic** or a **child**, apply the hierarchy now
 (details in `workflow/epics.md`):
 
 - **Epic**: add the `epic` label on GitHub (`--label epic`) / create it as an Epic type
-  on Jira.
+  on Jira. If `gh issue create` fails because `epic` doesn't exist, follow
+  **Workflow labels** in `workflow/issue-tracker.md`.
 - **Child**: after creating it, link it to its parent — GitHub sub-issue / Jira Epic Link
   (commands in `workflow/issue-tracker.md`) — and confirm the link took.
 

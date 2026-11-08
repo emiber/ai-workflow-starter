@@ -12,7 +12,7 @@ Refine the target issue (its number on GitHub or key on Jira — provided as the
 3. Fetch the issue with the matching tracker command (number on GitHub, key on Jira).
 4. List its ambiguities: goal, scope, behavior, data, dependencies, acceptance criteria, non-functional.
 5. Ask the user the questions needed to close them, in small groups. Don't proceed on unconfirmed assumptions. If the user delegates a decision, propose and confirm a concrete choice, record it under **Assumptions**, and reflect its effects in every applicable issue section.
-6. Write the refined issue following `docs/ISSUE_TEMPLATE.md` and update it with the tracker command (`gh issue edit` / `jira issue edit`). Mark it as refined (label on GitHub, comment/status on Jira).
+6. Write the refined issue following `docs/ISSUE_TEMPLATE.md` and update it with the tracker command (`gh issue edit` / `jira issue edit`). Mark it as refined (label on GitHub, comment/status on Jira); if applying the `refined` label fails because it doesn't exist, follow **Workflow labels** in `workflow/issue-tracker.md`.
 7. Confirm the result and suggest running the work-issue skill.
 
 Don't inflate scope. If the issue is trivial, say so and confirm in one sentence instead of running the full ritual.

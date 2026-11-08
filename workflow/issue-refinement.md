@@ -37,7 +37,7 @@ Apply Ponytail: don't inflate the scope. If the issue asks for something small, 
 
 Update the issue with the structure in `docs/ISSUE_TEMPLATE.md`:
 
-- **GitHub**: `gh issue edit <n> --body-file <file>` and add the `refined` label with `gh issue edit <n> --add-label "refined"`.
+- **GitHub**: `gh issue edit <n> --body-file <file>` and add the `refined` label with `gh issue edit <n> --add-label "refined"`. If that fails because `refined` doesn't exist, follow **Workflow labels** in `workflow/issue-tracker.md`.
 - **Jira**: `jira issue edit <KEY>` with the refined body, and leave a comment noting it was refined (`jira issue comment add <KEY>`). If the project uses a label/status for this, apply it.
 
 ### 5. Output
