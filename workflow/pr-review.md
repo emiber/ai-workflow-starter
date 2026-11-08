@@ -60,7 +60,7 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   ```bash
   gh issue view <issueN> --json title,body,url,labels,comments,parent
   ```
-  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) is `{id, number, state, title, url}` or null, with no labels. A non-null parent is an **epic parent** only if it's in the issue's own repository (`.parent.url` and `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels, read by the parent's URL (never by bare number), include `epic`:
+  The `parent` field (`gh` ≥ 2.94; see `workflow/issue-tracker.md`) is `{id, number, state, title, url}` or null, with no labels. A non-null parent is an **epic parent** only if it's in the issue's own repository (`.parent.url` and `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels, read by the parent's URL (never by bare number), include `epic`; check the repository first, and read labels only for a same-repository parent of a feature-branch PR:
   ```bash
   gh issue view <parent url> --json labels
   ```

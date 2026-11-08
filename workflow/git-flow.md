@@ -37,7 +37,7 @@ is an epic (see `workflow/epics.md`):
   ```
   The parent is an epic only if it's in the issue's own repository (`.parent.url` and
   `.url` share the `https://<host>/<owner>/<repo>/issues/` prefix) and its labels include
-  `epic`. On older `gh` or GitHub Enterprise Server, the REST fallback in
+  `epic`; check the repository first and read labels only for a same-repository parent. On older `gh` or GitHub Enterprise Server, the REST fallback in
   `workflow/issue-tracker.md` yields `parent_issue_url`, an API URL
   (`https://api.github.com/repos/<owner>/<repo>/issues/<parentN>`), not a number: check
   that its `repos/<owner>/<repo>/` is the issue's repository, then read the labels with
@@ -55,7 +55,7 @@ report; don't guess. Otherwise:
   is a sub-issue of #<parentN>, which isn't labeled `epic`" or "#<n> is a sub-issue of
   <owner>/<repo>#<m>, in another repository", and ask **before step 3 creates any
   branch**. Propose the standalone flow as the default: branch off `main`, PR into `main`,
-  `Closes #<n>`. If the user says a parent in this repository is meant to be an epic, they
+  the standalone reference from step 6. If the user says a parent in this repository is meant to be an epic, they
   label it `epic` themselves or approve labeling it, and the epic-child flow applies. A
   parent in another repository can't become this repository's epic.
 

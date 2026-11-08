@@ -65,7 +65,7 @@ parent/child commands**; other guides reference it instead of repeating the synt
   gh issue edit <epicN> --add-sub-issue <childN>           # link an existing issue as a child
   gh issue edit <childN> --remove-parent                   # unlink a child
   gh issue view <n> --json parent,subIssues,subIssuesSummary
-  #   .parent            → the epic this issue belongs to (null if standalone)
+  #   .parent            → the parent issue (null if none); it's an epic only if it passes `workflow/git-flow.md` step 1
   #   .subIssues.nodes[] → an epic's children (use .number)
   #   .subIssuesSummary  → { total, completed, percentCompleted }
   ```
@@ -84,7 +84,7 @@ parent/child commands**; other guides reference it instead of repeating the synt
   # 2) pass that id as <childId>:
   gh api --method POST "repos/{owner}/{repo}/issues/<epicN>/sub_issues" -F sub_issue_id=<childId>
 
-  # Detect a child's parent epic — read the parent reference from the issue payload
+  # Detect a child's parent — read the parent reference from the issue payload
   # (field name can vary by API version; adjust if empty):
   gh api "repos/{owner}/{repo}/issues/<n>" --jq '.parent.number // .parent_issue_url // empty'
   ```
