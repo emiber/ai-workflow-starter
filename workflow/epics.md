@@ -122,6 +122,7 @@ an **open PR**; never merge, never push to `main`.
 |---|---|
 | `git` + inside a repo | `git --version`, `git rev-parse --is-inside-work-tree` |
 | `main` exists, `origin` set, `gh` authenticated | as in `git-flow.md` |
+| Working tree clean | `git status --porcelain` is empty. If not, the fix is: commit, stash, or discard changes before starting. Never stash or discard them on the user's behalf. |
 | Tracker resolved | see `workflow/issue-tracker.md` |
 | `<n>` is an epic | GitHub: has the `epic` label. Jira: is an Epic. If not, stop. |
 | Integration branch exists | Find it by number, as in **Finding the integration branch** above. Exactly one → that's the epic branch, used by every later step. None → no child was ever worked: say so and stop. More than one → stop and ask the user which one is the epic's branch. A failed `git fetch` or `git ls-remote` → stop and report the error; it never means "no branch". |
@@ -161,15 +162,33 @@ an **open PR**; never merge, never push to `main`.
    children and do not open the integration PR** — there is no "proceed anyway". The epic
    ships only once every child's PR is merged into the epic branch, so step 4 (which closes
    the epic and all children) is reached only when the work is actually there.
-3. **Sync the epic branch with main.** Check out `epic/<n>-<slug>`, and merge the latest
-   `main` into it so the PR diff is clean:
+3. **Sync the epic branch with main.** Bring the local epic branch up to date with
+   `origin`, then merge the latest `main` into it so the PR diff is clean:
    ```bash
-   git checkout epic/<n>-<slug>
    git fetch origin
+   git checkout epic/<n>-<slug>
+   git merge-base --is-ancestor HEAD origin/epic/<n>-<slug>   # non-zero → stop and report
+   git pull --ff-only origin epic/<n>-<slug>
    git merge origin/main        # resolve conflicts here if any; never force
    git push origin epic/<n>-<slug>
    ```
-   If there are conflicts you can't resolve safely, stop and report.
+   - The local copy is usually behind `origin` (it was last pulled when the last child's
+     branch was cut, before that child's PR merged), so the pull fast-forwards it and the
+     push stays a fast-forward. With no local copy, the checkout creates one tracking
+     `origin/epic/<n>-<slug>`, which the fetch has just updated.
+   - **Ancestry check** (the `git merge-base --is-ancestor` line). It runs after the
+     checkout, so that `HEAD` is the epic branch, and before the pull. Exit 0: the local
+     branch is equal to or behind `origin`; go on. Non-zero: the local branch has commits
+     that aren't on `origin` (it's ahead or has diverged, e.g. an unpushed merge commit
+     from an earlier run), or the check couldn't run. Stop and report those commits
+     (`git log --oneline origin/epic/<n>-<slug>..HEAD`) or the error; the user decides
+     whether to push or drop them. Never reset, rebase, or force-push the shared epic
+     branch. `git pull --ff-only` alone doesn't catch this: on a branch that is only ahead
+     it reports "Already up to date" and exits 0, and the push would then publish those
+     commits.
+   - A no-op isn't a failure: a pull or merge that reports "Already up to date", or a push
+     that reports "Everything up-to-date", means there was nothing to bring in; go on.
+   - If there are conflicts you can't resolve safely, stop and report.
 4. **Open the integration PR.**
    ```bash
    gh pr create \
