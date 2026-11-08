@@ -75,8 +75,8 @@ parent/child commands**; other guides reference it instead of repeating the synt
   PowerShell. All three operations have a fallback:
 
   ```bash
-  # List an epic's children:
-  gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --jq '.[].number'
+  # List an epic's children, every page (read the rules below before using the output):
+  gh api "repos/{owner}/{repo}/issues/<epicN>/sub_issues" --paginate --jq '.[].number'
 
   # Link a child — two shell-neutral steps (avoid Bash-only command substitution).
   # 1) read the child's internal id (NOT its issue number):
@@ -89,9 +89,41 @@ parent/child commands**; other guides reference it instead of repeating the synt
   gh api "repos/{owner}/{repo}/issues/<n>" --jq '.parent.number // .parent_issue_url // empty'
   ```
 
+  **Listing an epic's children (REST).** The endpoint returns the children one page at a
+  time, so the list command needs `--paginate`: `gh` follows each next-page link until
+  there is none and prints every child's number, one per line, open or closed. It prints
+  each page as it arrives, so the output is the full list only if the whole command
+  succeeds:
+
+  - Check the exit status before using the output. Bash:
+    `children=$(gh api … --paginate --jq '.[].number'); rc=$?`, and don't pipe `gh`
+    into another command first (a pipeline returns its last command's status).
+    PowerShell: `$children = gh api … --paginate --jq '.[].number'`, then read
+    `$LASTEXITCODE` on the very next line. Output proves nothing: a failed run can still
+    print numbers from earlier pages, or an error body.
+  - **Non-zero exit** — any page failed (authentication, permission, rate limit,
+    unsupported endpoint, network) or `--jq` failed → discard everything it printed, stop,
+    and report the epic's number and the error, never a token. It's never an empty or a
+    partial list. A retry lists again from the first page, under these same rules.
+  - **Exit 0** → the list is complete; no output means the epic has no children. Count
+    each number once. Completeness comes from the command finishing with no next link
+    left, never from a page's size (30, 100, or any other).
+  - If you already hold a trustworthy total of this epic's direct children (for example a
+    sub-issue summary's `total` from a read you made anyway; don't fetch one for this) and
+    it differs from the number of children listed, stop and list again from scratch.
+    `completed` is not a total.
+  - The pages aren't a snapshot: a child linked or unlinked while they're read, or a wrong
+    next link from the server, can go unnoticed unless such a total is at hand.
+
   Last resort for parent detection, if the payload exposes no parent field on your API
   version: treat the issue as a child when it appears in some `epic`-labeled issue's
-  `sub_issues` list. Only use these when the native commands aren't available.
+  `sub_issues` list. Read each list with the list command and the rules above: every page
+  counts, so a match on a later page is found, and a list counts only once its command has
+  succeeded. The issue has no epic parent only if every one of those lists was read
+  successfully without it. If a list fails before a match is found, the parent lookup has
+  failed — never "no parent": don't treat the issue as standalone or base its branch on
+  `main` because of it; follow the calling guide's rule for a failed lookup. Only use
+  these when the native commands aren't available.
 
   All these commands, like `gh issue view <n>` above, name issues by bare number in the
   current repository (`gh`'s default repository, which also fills `{owner}/{repo}`). Use
