@@ -13,7 +13,7 @@ Determine whether the project uses GitHub or Jira following `workflow/issue-trac
 - **GitHub**: `gh issue view <n> --json title,body,labels,comments`
 - **Jira**: `jira issue view <KEY>`
 
-If it doesn't exist, say so and offer to create it with `/create-issue` (see `workflow/issue-creation.md`), or directly with `gh issue create` / `jira --project ABC issue create --no-input` (`ABC` being `jira_project`; see **Project selection** in `workflow/issue-tracker.md`).
+If it doesn't exist, say so and offer to create it with `/create-issue` (see `workflow/issue-creation.md`), or directly with `gh issue create` / `jira --project ABC issue create --no-input --type <Type> --summary '<title>' --template <file>` (`ABC` being `jira_project`; see **Project selection** in `workflow/issue-tracker.md`).
 
 ### 2. Detect ambiguities
 
@@ -35,7 +35,7 @@ Apply Ponytail: don't inflate the scope. If the issue asks for something small, 
 
 ### 4. Show the draft, get approval, then write
 
-Draft the refined issue with the structure in `docs/ISSUE_TEMPLATE.md`. Nothing is written to the tracker until the user approves the draft:
+Draft the refined issue with the structure in `docs/ISSUE_TEMPLATE.md`. Nothing is written to the tracker until the user approves the draft (or approved publishing in advance, below):
 
 1. **Show** the complete refined body, not a summary, and say what will mark it refined: the `refined` label on GitHub; the refinement comment, and any label or status the project uses, on Jira.
 2. **Wait for explicit approval** ("ok", "go ahead", "approved", …). A question or a vague comment is not approval: answer it and ask again. If the user asks for changes, apply them, show the revised body, and wait again. If the user declines or aborts, write nothing, say the issue is unchanged, and stop.
@@ -46,7 +46,7 @@ Only then write the body and mark the issue refined:
 - **GitHub**: `gh issue edit <n> --body-file <file>` and add the `refined` label with `gh issue edit <n> --add-label "refined"`. If that fails because `refined` doesn't exist, follow **Workflow labels** in `workflow/issue-tracker.md`.
 - **Jira**: `jira issue edit <KEY>` with the refined body, and leave a comment noting it was refined (`jira issue comment add <KEY>`). If the project uses a label/status for this, apply it.
 
-**Approval given in advance.** If the user's request explicitly says to publish without review (e.g. "refine and publish these, don't ask me"), that is the approval: skip 1 and 2. It covers only the issue as you read it, so the re-fetch (3) still applies: if the issue changed, stop, show what changed and the revised draft, and wait for explicit approval; if it didn't, write without asking. Record the decisions you made yourself under **Assumptions** as "delegated, not confirmed". Silence or "I'm away" is not approval.
+**Approval given in advance.** If the user's request explicitly says to publish without review (e.g. "refine and publish these, don't ask me"), that is the approval: skip 1 and 2. It covers only the issue as you read it, so the re-fetch (3) still applies: if the issue changed, stop, show what changed and the revised draft, and wait for explicit approval; if it didn't, write without asking. Before writing, record the decisions you made yourself in the draft, under **Assumptions**, as "delegated, not confirmed". Silence or "I'm away" is not approval.
 
 ### 5. Output
 
