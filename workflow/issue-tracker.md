@@ -96,7 +96,7 @@ parent/child commands**; other guides reference it instead of repeating the synt
   succeeds:
 
   - Check the exit status before using the output. Bash:
-    `children=$(gh api … --paginate --jq '.[].number'); status=$?`, and don't pipe `gh`
+    `children=$(gh api … --paginate --jq '.[].number'); rc=$?`, and don't pipe `gh`
     into another command first (a pipeline returns its last command's status).
     PowerShell: `$children = gh api … --paginate --jq '.[].number'`, then read
     `$LASTEXITCODE` on the very next line. Output proves nothing: a failed run can still
