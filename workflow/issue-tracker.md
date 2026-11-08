@@ -129,7 +129,9 @@ jira --project ABC issue list --plain --jql 'project = "ABC" AND (issuetype = "E
   `--jql` value is one quoted shell argument, and each value in it a JQL string in double
   quotes; the summary is one single-quoted argument. Prefer plain words as keywords.
   Inside a JQL string, write `"` as `\"` and `\` as `\\`; escape the shell's own quote for
-  the shell in use (in the single-quoted examples: Bash `'\''`, PowerShell `''`). Quote
+  the shell in use (in the single-quoted examples: Bash `'\''`; PowerShell `''`, and also
+  each of `‘`, `’`, `‚` and `‛`, which PowerShell reads as single quotes too: `’` → `’’`).
+  Quote
   the `--project` value too if the shell would read any of its characters as syntax.
 - The body is Markdown, so it never goes on the command line (backticks and `$(…)` run
   inside double quotes). Write it to a file with your file-write tool, outside the working
