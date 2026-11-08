@@ -8,10 +8,14 @@ on:
       - main
       - "epic/**"
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     name: Quality gate — not initialized
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
