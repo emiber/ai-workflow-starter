@@ -1,5 +1,4 @@
 ---
-name: work-issue
 description: Implements a refined issue following the git flow main → branch → implementation → PR.
 ---
 

@@ -25,7 +25,7 @@ Each phase leaves something a human can read and approve before moving to the ne
 
 ## From Superpowers — modular knowledge and reusable commands
 
-1. **A prompt you repeat three times is a command.** Instead of rewriting instructions, let them live in `.claude/commands/`.
+1. **A prompt you repeat three times is a command.** Instead of rewriting instructions, put its steps in a skill, `.agents/skills/<name>/SKILL.md`, and add a thin wrapper, `.claude/commands/<name>.md`, that delegates to it.
 2. **Load context on-demand.** Don't put all the knowledge in one giant file; split by topic (`scaffolding.md`, `issue-refinement.md`, `git-flow.md`) and read the relevant one.
 3. **Self-contained instructions.** Each `workflow/` file must be readable on its own and say what to do, without depending on you having read the others.
 

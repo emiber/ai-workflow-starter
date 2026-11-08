@@ -1,5 +1,4 @@
 ---
-name: refine-issue
 description: Refines and clarifies an issue (GitHub or Jira) by asking all the necessary questions until it's implementable.
 ---
 

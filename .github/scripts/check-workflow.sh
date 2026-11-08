@@ -171,8 +171,10 @@ for d in .agents/skills/*/; do
   [ -f ".claude/commands/$n.md" ] || fail "$d has no matching .claude/commands/$n.md"
 done
 
-# 2. Every command is listed in the entry files and the workflow docs
-#    (as `/name`, or as the `name` skill in AGENTS.md).
+# 2. Every command is listed in the entry files and the workflow docs: as
+#    `/name` followed by a backtick or a space (`/name` or `/name <args>`), or
+#    as the `name` skill in AGENTS.md. A longer command that starts with the
+#    name, such as `/name-more`, doesn't count.
 for doc in CLAUDE.md AGENTS.md .github/copilot-instructions.md workflow/README.md workflow/model-strategy.md; do
   if [ ! -f "$doc" ]; then
     fail "missing $doc"
@@ -182,8 +184,8 @@ for doc in CLAUDE.md AGENTS.md .github/copilot-instructions.md workflow/README.m
   for f in .claude/commands/*.md; do
     n=${f##*/}
     n=${n%.md}
-    if [ "$doc" = AGENTS.md ]; then want="\`$n\`"; else want="\`/$n"; fi
-    [[ $content == *"$want"* ]] || fail "$doc doesn't list the $n command"
+    if [ "$doc" = AGENTS.md ]; then want="\`$n\`" alt="\`$n\`"; else want="\`/$n\`" alt="\`/$n "; fi
+    [[ $content == *"$want"* || $content == *"$alt"* ]] || fail "$doc doesn't list the $n command"
   done
 done
 

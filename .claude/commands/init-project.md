@@ -1,5 +1,4 @@
 ---
-name: init-project
 description: Interactive scaffolding of a new project. Asks the project type, defines components, suggests technologies, and generates the base.
 ---
 
