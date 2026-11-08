@@ -19,6 +19,10 @@ while IFS= read -r line || [ -n "$line" ]; do
   checker+="${line%$'\r'}"$'\n'
 done < "$script"
 
+# The symlink cases need real links: Git Bash's ln -s copies files unless MSYS
+# asks for links. Other platforms ignore MSYS.
+export MSYS="${MSYS:+$MSYS }winsymlinks:sys"
+
 tmp=$(mktemp -d) || exit 1
 trap 'rm -rf "$tmp"' EXIT
 
@@ -93,6 +97,75 @@ comment_after_name() { demo_skill 'name: demo # the demo skill' 'description: De
 state_after_valid_skill() { mkdir .agents/skills/other && printf -- '---\nname: other\n---\n' > .agents/skills/other/SKILL.md; }
 state_after_invalid_skill() { mkdir .agents/skills/aaa && printf -- '---\nname: aaa\ndescription: First skill.\n' > .agents/skills/aaa/SKILL.md; }
 
+# Guide reference cases. add_to_skill <line>...: appends these lines to the demo
+# skill's body, so its frontmatter stays valid.
+add_to_skill() { printf -- '%s\n' "$@" >> .agents/skills/demo/SKILL.md; }
+nested_references() {
+  mkdir -p docs/setup/windows workflow/team/how-to &&
+    printf -- '# Intro\n' > docs/intro.md &&
+    printf -- '# Install\n' > docs/setup/install.md &&
+    printf -- '# First run\n\nBack to `docs/setup/install.md#` and workflow/guide.md.\n' > docs/setup/windows/first-run.md &&
+    printf -- '# Review\n' > workflow/team/how-to/review.md &&
+    add_to_skill 'Read workflow/guide.md, docs/intro.md#top and [setup](docs/setup/install.md#usage).' \
+      'Then `docs/setup/windows/first-run.md` and [review](workflow/team/how-to/review.md).'
+}
+skill_missing_nested_doc() { add_to_skill 'See docs/setup/missing.md.'; }
+skill_missing_nested_workflow() { add_to_skill 'See [the steps](workflow/team/missing.md).'; }
+broken_deep_guides() {
+  mkdir -p docs/a/b workflow/c/d &&
+    printf -- 'See `docs/a/gone.md`.\n' > docs/a/b/deep.md &&
+    printf -- 'See workflow/c/gone.md.\n' > workflow/c/d/deep.md
+}
+anchored_and_directory_targets() { mkdir -p docs/folder.md && add_to_skill 'See [usage](docs/setup/missing.md#usage) and `docs/folder.md`.'; }
+crlf_and_unterminated_lines() {
+  mkdir -p docs/setup/windows &&
+    printf -- '# CRLF\r\nSee docs/setup/gone.md\r\nLast: `workflow/team/gone.md#end`' > docs/setup/windows/crlf.md
+}
+excluded_forms() {
+  mkdir -p docs/setup &&
+    printf -- '%s\n' 'Web: https://example.test/docs/setup/missing.md and //example.test/docs/setup/missing.md' \
+      '[next](https://example.test/?next=docs/setup/missing.md), [up](../guide.md), other/docs/setup/missing.md' \
+      'Not checked: docs/setup/../missing.md, docs/setup/install.md/child, docs/setup/install.md?raw=1' \
+      'docs/setup/install.md.bak docs/setup/install.md...bak docs/setup/absent.md' > docs/setup/notes.md
+}
+trailing_ellipsis() { add_to_skill 'See docs/setup/missing.md... and then workflow/team/missing.md..'; }
+glued_forms() {
+  add_to_skill 'Not checked: --file=docs/setup/missing.md, @workflow/team/missing.md, ~~docs/setup/missing.md~~, docs/setup/missing.md:12, docs/setup/missing.md&a=1.' \
+    'Checked: docs/setup/absent.md.'
+}
+hidden_and_other_files() {
+  mkdir -p docs/.drafts workflow/team &&
+    printf -- 'See docs/gone.md.\n' > docs/.drafts/guide.md &&
+    printf -- 'See docs/gone.md.\n' > docs/.hidden.md &&
+    printf -- 'See docs/gone.md.\n' > workflow/team/notes.txt &&
+    printf -- 'See docs/gone.md.\n' > workflow/team/UPPER.MD
+}
+empty_guide_dirs() { mkdir -p docs workflow/empty && add_to_skill 'See workflow/empty/none.md.'; }
+symlinks_not_followed() {
+  mkdir -p docs/setup/real outside &&
+    ln -s . docs/setup/self &&
+    ln -s .. docs/setup/parent &&
+    printf -- 'See docs/gone.md.\n' > outside/linked.md &&
+    ln -s ../outside/linked.md docs/linked.md &&
+    printf -- 'See docs/setup/b.md.\n' > docs/setup/a.md &&
+    printf -- 'See docs/setup/a.md.\n' > docs/setup/b.md &&
+    printf -- 'See workflow/gone.md.\n' > docs/setup/real/guide.md
+}
+symlinked_guide_root() {
+  mkdir -p real-docs/setup &&
+    printf -- 'See docs/gone.md.\n' > real-docs/setup/install.md &&
+    ln -s real-docs docs &&
+    add_to_skill 'See docs/setup/install.md.'
+}
+symlinked_directory() {
+  mkdir -p docs real-setup &&
+    printf -- '# Install\n' > real-setup/install.md &&
+    ln -s ../real-setup docs/setup &&
+    add_to_skill 'See docs/setup/install.md.'
+}
+dangling_symlink() { mkdir -p docs && ln -s nowhere.md docs/gone.md && add_to_skill 'See docs/gone.md.'; }
+file_symlink() { mkdir -p docs && ln -s ../workflow/guide.md docs/alias.md && add_to_skill 'See docs/alias.md#top.'; }
+
 passed=0
 failed=0
 n=0
@@ -160,6 +233,29 @@ run_case "text after the closing quote" 1 "$skill name: has an unclosed quote or
 run_case "comment after the name" 1 "$skill name: can't have ': ' or ' #'" comment_after_name
 run_case "no state carried over from a valid skill" 1 ".agents/skills/other/SKILL.md: frontmatter must have exactly one description: field, found 0" state_after_valid_skill
 run_case "no state carried over from an invalid skill" 1 "Workflow integrity: 2 problem(s) found." state_after_invalid_skill
+
+refs=".agents/skills/demo/SKILL.md references"
+unsupported="is a symlink; symlinked guide paths aren't supported"
+run_case "nested references in every supported form" 0 "Workflow integrity: OK." nested_references
+run_case "skill references a missing nested docs/ guide" 1 "$refs docs/setup/missing.md, which does not exist" skill_missing_nested_doc
+run_case "skill references a missing nested workflow/ guide" 1 "$refs workflow/team/missing.md, which does not exist" skill_missing_nested_workflow
+run_case "broken reference deep under docs/" 1 "docs/a/b/deep.md references docs/a/gone.md, which does not exist" broken_deep_guides
+run_case "broken reference deep under workflow/" 1 "workflow/c/d/deep.md references workflow/c/gone.md, which does not exist" broken_deep_guides
+run_case "missing anchored target" 1 "$refs docs/setup/missing.md, which does not exist" anchored_and_directory_targets
+run_case "directory named like a guide, same line" 1 "$refs docs/folder.md, which does not exist" anchored_and_directory_targets
+run_case "reference on a CRLF line" 1 "docs/setup/windows/crlf.md references docs/setup/gone.md, which does not exist" crlf_and_unterminated_lines
+run_case "reference on a last line without a newline" 1 "docs/setup/windows/crlf.md references workflow/team/gone.md, which does not exist" crlf_and_unterminated_lines
+run_case "excluded forms aren't checked, the reference next to them is" 1 $'::error::docs/setup/notes.md references docs/setup/absent.md, which does not exist\nWorkflow integrity: 1 problem(s) found.' excluded_forms
+run_case "reference before a trailing ellipsis" 1 "$refs docs/setup/missing.md, which does not exist" trailing_ellipsis
+run_case "reference before a trailing .. at the end of the line" 1 "$refs workflow/team/missing.md, which does not exist" trailing_ellipsis
+run_case "paths glued to = @ ~ : & aren't checked, the reference next to them is" 1 $'::error::'"$refs docs/setup/absent.md, which does not exist"$'\nWorkflow integrity: 1 problem(s) found.' glued_forms
+run_case "hidden and non-Markdown files aren't sources" 0 "Workflow integrity: OK." hidden_and_other_files
+run_case "empty guide directories" 1 "::error::$refs workflow/empty/none.md, which does not exist"$'\n'"Workflow integrity: 1 problem(s) found." empty_guide_dirs
+run_case "symlinks aren't followed or read, real dirs beside them are" 1 $'::error::docs/setup/real/guide.md references workflow/gone.md, which does not exist\nWorkflow integrity: 1 problem(s) found.' symlinks_not_followed
+run_case "reference through a symlinked guide root" 1 "::error::$refs docs/setup/install.md, but docs $unsupported"$'\n'"Workflow integrity: 1 problem(s) found." symlinked_guide_root
+run_case "reference through a symlinked directory" 1 "$refs docs/setup/install.md, but docs/setup $unsupported" symlinked_directory
+run_case "reference to a dangling symlink" 1 "$refs docs/gone.md, but docs/gone.md $unsupported" dangling_symlink
+run_case "reference to a file symlink" 1 "$refs docs/alias.md, but docs/alias.md $unsupported" file_symlink
 
 echo "$passed passed, $failed failed"
 [ "$failed" -eq 0 ]
