@@ -21,7 +21,7 @@ It gives you two things:
    git remote add origin <your-repo-url>
    git push -u origin main
    ```
-2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated, `gh` ≥ 2.94 (on older `gh` or GitHub Enterprise Server, the REST fallback in `workflow/issue-tracker.md`). For Jira issues, also the `jira` CLI. `bash` (Git Bash on Windows) is only needed to run the workflow integrity check locally. See [Git flow requirements](#git-flow-requirements).
+2. **Check the requirements**: `git` and `gh` (GitHub CLI) authenticated, `gh` ≥ 2.94 (on older `gh` or GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md`). For Jira issues, also the `jira` CLI. `bash` (Git Bash on Windows) is only needed to run the workflow integrity check locally. See [Git flow requirements](#git-flow-requirements).
 3. **Open Claude Code** in the folder, ideally with `opusplan` as the session model (details in `workflow/model-strategy.md`):
    ```bash
    claude --model opusplan

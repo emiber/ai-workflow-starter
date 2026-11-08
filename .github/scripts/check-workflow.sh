@@ -184,7 +184,8 @@ for doc in CLAUDE.md AGENTS.md .github/copilot-instructions.md workflow/README.m
   for f in .claude/commands/*.md; do
     n=${f##*/}
     n=${n%.md}
-    if [ "$doc" = AGENTS.md ]; then want="\`$n\`" alt="\`$n\`"; else want="\`/$n\`" alt="\`/$n "; fi
+    # AGENTS.md keeps the exact match, so alt is the same pattern as want.
+    if [ "$doc" = AGENTS.md ]; then want="\`$n\`"; alt=$want; else want="\`/$n\`" alt="\`/$n "; fi
     [[ $content == *"$want"* || $content == *"$alt"* ]] || fail "$doc doesn't list the $n command"
   done
 done
