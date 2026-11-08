@@ -11,7 +11,7 @@ The same contract runs in two modes: against an **open PR** (`/review-pr <n>`, s
 Same checks, different inputs. You're given an issue number and a base branch:
 
 - **Skip** the Preflight's PR check and step 1's PR fetch. The PR shape is known from the base: `main` → standalone, a base starting with `epic/<parentN>-` (`<parentN>` is the issue's parent epic, whatever the slug) → epic child.
-- **Linked issue** = the issue you were given, in the repository `/work-issue` is working in, which stands in for the PR's repository (step 1): `gh repo view --json url --jq .url` prints `https://<host>/<owner>/<repo>`, and the issue's URL is that plus `/issues/<n>`. Fetch it with step 2's commands.
+- **Linked issue** = the issue you were given. On GitHub, it's in the repository `/work-issue` is working in, which stands in for the PR's repository (step 1): `gh repo view --json url --jq .url` prints `https://<host>/<owner>/<repo>`, and the issue's URL is that plus `/issues/<n>`. On Jira, it's the key. Fetch it with step 2's commands.
 - **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
 - **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
@@ -69,6 +69,8 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   - `owner/repo#42` → issue 42 in `owner/repo`, on the PR's host.
   - `https://<host>/<owner>/<repo>/issues/42` → exactly that issue.
 
+  A keyworded token written as a URL that isn't one of these forms (`http://…`, a query string, a non-`/issues/` path) is a malformed reference, not an ignorable one: report it under **Unresolved references** below.
+
   A reference with no keyword — a bare `#<n>`, `owner/repo#<n>` or issue URL — **is not an authoritative link**: treat it at most as "possibly related", never as a reviewed issue.
 
   **Accepted references.** An issue URL is accepted only if all of these hold:
@@ -95,7 +97,7 @@ Resolve the linked issue **deterministically** — don't bind the review to the 
   - its issue can't be fetched (no access, not found, or any other error);
   - the fetch returns a different identity.
 
-  Never retry it by number in the PR's repository, never skip it, never send it to a host that isn't accepted, and don't change `gh` authentication to reach it. Add a blocker that names it exactly: as written, with any `user:password@` part redacted, or by its position in `closingIssuesReferences` if it has no URL. Give the reason and what's needed: read access, a corrected reference, or a manual check of that issue's ACs. For example: "`Closes b/lib#42` → `https://github.com/b/lib/issues/42`: `gh issue view` failed (no access); grant read access or validate its ACs manually". Review the other issues as usual, but never report the ACs as verified while a reference is unresolved.
+  Never retry it by number in the PR's repository, never skip it, never send it to a host that isn't accepted, and don't change `gh` authentication to reach it. Add a blocker that names it exactly: as written, with any `user:password@` part redacted, or by its position in `closingIssuesReferences` if it has no URL. Give the reason and what's needed: read access, a corrected reference, or a manual check of that issue's ACs. For example: "`Closes b/lib#42` → `https://github.com/b/lib/issues/42`: `gh issue view` failed (no access); grant read access or validate its ACs manually". An unsupported host: "`Closes https://ghe.example.com/b/lib/issues/5`: host not accepted (neither the PR's host nor one `gh auth status` lists); validate its ACs manually". An identity mismatch: "`https://github.com/a/app/issues/5` returned `https://github.com/a/other/issues/5` (transferred or renamed); validate its ACs manually". Review the other issues as usual, but never report the ACs as verified while a reference is unresolved.
 - **Jira**: look for a Jira key in the title or body (e.g. `[ABC-123]`). Fetch with:
   ```bash
   jira issue view <KEY>
