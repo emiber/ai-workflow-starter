@@ -93,11 +93,11 @@ Show the draft (title + body) to the user and confirm before creating.
 
 - **GitHub**: `gh issue create --title "<title>" --body-file <file>` (add
   `--label <type>` if the project uses type labels). Returns the issue URL/number.
-- **Jira**: `jira --project ABC issue create` (same key as step 2) with the summary,
-  description, and the project's issue type, e.g.
-  `--type Task --summary "<title>" --body "<body>"`. Returns the key. If it fails, stop
-  and report it (**Project selection** in `workflow/issue-tracker.md`); never retry it
-  without `--project`.
+- **Jira**: `jira --project ABC issue create --no-input` (same key as step 2) with the
+  summary, description, and the project's issue type, e.g.
+  `--type Task --summary '<title>' --template <file>`: the body goes in a file, never on
+  the command line (**Project selection** in `workflow/issue-tracker.md`). Returns the
+  key. If it fails, stop and report it; never retry it without `--project`.
 
 If step 3 decided this is an **epic** or a **child**, apply the hierarchy now
 (details in `workflow/epics.md`):

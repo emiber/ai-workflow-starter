@@ -75,7 +75,7 @@ The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/a
 
 - View issue: `jira issue view <KEY>` (e.g. `jira issue view ABC-123`)
 - Edit/comment: `jira issue edit <KEY>` / `jira issue comment add <KEY>`
-- Create issue: `jira --project ABC issue create`, with `ABC` standing for `jira_project` (see **Project selection** below)
+- Create issue: `jira --project ABC issue create --no-input`, with `ABC` standing for `jira_project` (see **Project selection** below)
 - Reference in PR: include the key in the PR title/body (e.g. `[ABC-123] ...`). Jira does **not** close the issue automatically via the GitHub PR unless there's an integration configured; assume closing is done by a human or Jira automation, not the flow.
 - Requires: `ankitpokhrel/jira-cli` installed and initialized via `jira init` (`jira me` to verify authentication).
 
@@ -114,23 +114,26 @@ workflow's own queries never name a project other than the configured one. With
 `jira_project=ABC`:
 
 ```text
-jira --project ABC issue create --type Task --summary "Example summary" --body "Example description"
+jira --project ABC issue create --no-input --type Task --summary 'Example summary' --template <file>
 jira --project ABC issue list --plain --jql 'project = "ABC" AND (summary ~ "<key words>" AND statusCategory != Done)'
 jira --project ABC issue list --plain --jql 'project = "ABC" AND (issuetype = "Epic" AND statusCategory != Done)'
 ```
 
 - Put the configured key in both places, the same in each. `Task` and `Epic` are example
-  names: use the project's own issue types. Create's `--type`, `--summary` and `--body`
-  are `-t`, `-s` and `-b`.
+  names: use the project's own issue types. Create's `--type`, `--summary` and
+  `--template` are `-t`, `-s` and `-T`. `--no-input` stops jira-cli from prompting.
 - `--plain` prints the list as text; without it, `issue list` opens an interactive table.
 - Alternatives go inside the parentheses, never beside the project predicate:
   `project = "ABC" AND (summary ~ "login" OR summary ~ "timeout")`.
-- The key and the keywords are data, never shell or JQL syntax. The whole `--jql` value is
-  one quoted shell argument, and each value in it a JQL string in double quotes. Prefer
-  plain words as keywords. Inside a JQL string, write `"` as `\"` and `\` as `\\`; escape
-  the shell's own quote for the shell in use (in the single-quoted examples: Bash `'\''`,
-  PowerShell `''`). Quote the `--project` value too if the shell would read any of its
-  characters as syntax.
+- The key, the keywords and the summary are data, never shell or JQL syntax. The whole
+  `--jql` value is one quoted shell argument, and each value in it a JQL string in double
+  quotes; the summary is one single-quoted argument. Prefer plain words as keywords.
+  Inside a JQL string, write `"` as `\"` and `\` as `\\`; escape the shell's own quote for
+  the shell in use (in the single-quoted examples: Bash `'\''`, PowerShell `''`). Quote
+  the `--project` value too if the shell would read any of its characters as syntax.
+- The body is Markdown, so it never goes on the command line (backticks and `$(…)` run
+  inside double quotes). Write it to a file with your file-write tool, outside the working
+  tree, and pass the path to `--template`, like GitHub's `--body-file`.
 
 **Read the result** by exit status and message:
 
