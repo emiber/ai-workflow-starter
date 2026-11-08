@@ -17,7 +17,7 @@ Above all, follow `workflow/principles.md`: do the minimum that solves the probl
 
 ## Model strategy
 
-You plan with Opus and implement with Sonnet (see `workflow/model-strategy.md`). The simplest way: start with `claude --model opusplan` or run `/model opusplan`, and Claude Code switches on its own between the planning and execution phases. Don't hardcode versions; use the `opus`/`sonnet` aliases that always point to the latest.
+You plan with Opus and implement with Sonnet (see `workflow/model-strategy.md`). Start with `claude --model opusplan` or run `/model opusplan`: it uses Opus only in plan mode and Sonnet otherwise, which fits `/work-issue`. Run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`, and switch back with `/model opusplan` before `/work-issue`, because `/model` also saves the choice as the default for new sessions. Don't hardcode versions; use the `opus`/`sonnet` aliases that always point to the latest.
 
 ## Available commands
 

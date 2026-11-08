@@ -24,13 +24,13 @@ Three ways, from least to most automatic:
    ```
    `opus` and `sonnet` are aliases that always point to the latest version of each family, so this doesn't age.
 
-2. **`opusplan` (recommended)** — native hybrid mode: Claude Code uses Opus for the planning/reasoning phase and switches on its own to Sonnet to execute.
+2. **`opusplan` (recommended)** — native hybrid mode: Claude Code uses Opus only while you're in plan mode (Shift+Tab) and Sonnet the rest of the time. It picks the model by mode, not by command.
    ```
    /model opusplan
    ```
-   It's literally the flow you asked for, without having to remember to switch.
+   That fits `/work-issue`: plan in plan mode on Opus, implement on Sonnet. It doesn't run `/init-project`, `/create-issue` or `/refine-issue` on Opus; see **Mapping to this repo's commands** below.
 
-3. **Default at startup** — `claude --model opusplan` so the whole session runs with this behavior.
+3. **Default at startup** — `claude --model opusplan` so the whole session runs with this behavior: Opus only in plan mode, Sonnet otherwise.
 
 ## Mapping to this repo's commands
 
@@ -44,10 +44,14 @@ Three ways, from least to most automatic:
 | `/review-pr` | read-only PR review | execution (Sonnet) |
 | self-review inside `/work-issue` | read-only review subagent, clean context | execution (Sonnet) |
 
-With `opusplan` active you don't have to think about this: the mode makes the switch at the right time.
+`opusplan` doesn't follow this table: it picks the model by plan mode, not by command, and outside plan mode every command runs on Sonnet. To follow the table:
+
+- Run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`. Plan mode isn't a substitute: these commands write files or update the tracker, and plan mode blocks file edits until you approve a plan and needs approval for commands outside its read-only set (such as `gh issue edit`).
+- Switch back with `/model opusplan` before `/work-issue`. `/model` also saves your choice as the default for new sessions, so otherwise later sessions start on Opus too.
+- `/work-issue`, `/finish-epic` and `/review-pr` are fine on `opusplan` or `sonnet`.
 
 One nuance: `opusplan` uses Opus only while you're in **plan mode**. The implementation plan that `/work-issue` posts for your approval is drafted by the execution model unless you switch to plan mode (Shift+Tab) for that step — worth doing for a non-trivial issue.
 
 ## Cost note
 
-Switching models mid-session reprocesses the whole history (more tokens). For long tasks, it's better to plan in an Opus session and start a fresh Sonnet session to implement, instead of switching with an already-huge context. `opusplan` handles this internally better than manual switching.
+Switching models mid-session reprocesses the whole history (more tokens). For long tasks, it's better to plan in an Opus session and start a fresh Sonnet session to implement, instead of switching with an already-huge context.

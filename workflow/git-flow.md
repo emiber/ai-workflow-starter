@@ -125,7 +125,7 @@ git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 
 ### 4. Implement
 
-- **Model**: this phase is implementation → use the execution model (Sonnet). See `workflow/model-strategy.md`. If you're coming from planning with Opus, switch with `/model sonnet` or let `opusplan` do it on its own.
+- **Model**: this phase is implementation → use the execution model (Sonnet). See `workflow/model-strategy.md`. If you're coming from planning with Opus, switch with `/model sonnet` or `/model opusplan`.
 - **Get your bearings first.** Start from the issue's most concrete anchor and trace only the owning code path, its immediate callers and data flow, and the nearest tests. Stop exploring once you can state the expected behavior, the smallest plausible change, and a focused check that could disprove it. Keep this pass read-only; use plain reading and search, and don't add tooling for it.
 - **Plan approval — before writing any code.** Post the plan in the chat and wait for the user's explicit approval ("go ahead", "approved", …). A question or a vague comment is not approval: answer it and ask again. The plan covers:
   - **Understanding** — the goal and each acceptance criterion, one line each.
