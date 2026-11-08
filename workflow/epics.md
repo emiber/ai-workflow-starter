@@ -125,7 +125,7 @@ an **open PR**; never merge, never push to `main`.
 | Working tree clean | `git status --porcelain` is empty. If not, the fix is: commit, stash, or discard changes before starting. Never stash or discard them on the user's behalf. |
 | Tracker resolved | see `workflow/issue-tracker.md` |
 | `<n>` is an epic | GitHub: has the `epic` label. Jira: is an Epic. If not, stop. |
-| Integration branch exists | Find it by number, as in **Finding the integration branch** above. Exactly one → that's the epic branch, used by every later step. None → no child was ever worked: say so and stop. More than one → stop and ask the user which one is the epic's branch. A failed `git fetch` or `git ls-remote` → stop and report the error; it never means "no branch". |
+| Integration branch exists | Find it by number, as in **Finding the integration branch** above. Exactly one → that's the epic branch, used by every later step. None → no child was ever worked: say so and stop. More than one → stop and ask the user which one is the epic's branch. A failed lookup command (`git fetch`, `git for-each-ref` or `git ls-remote`) → stop and report the error; it never means "no branch". |
 
 ### Steps
 
