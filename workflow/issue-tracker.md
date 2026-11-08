@@ -38,6 +38,37 @@ If the user doesn't answer or answers empty, assume **github**.
 - Reference in PR: `Closes #<n>`
 - Requires: `gh` authenticated (`gh auth status`).
 
+#### Workflow labels
+
+The workflow applies two labels that GitHub doesn't ship by default: `epic` (`/create-issue`
+for a new epic, and `/work-issue` when the user approves labeling a parent as an epic) and
+`refined` (`/refine-issue`). This is the single place that lists them with the command to
+create each one; every step that applies one points here.
+
+```bash
+gh label create epic --color 5319E7 --description "Parent issue grouping child issues (see workflow/epics.md)"
+gh label create refined --color 0E8A16 --description "Issue has been refined and is ready to implement"
+```
+
+**If the label is missing — create and retry.** Apply the label with the step's usual
+command; never check for it first. Only if that command fails with an error containing
+`'<label>' not found`, where `<label>` is `epic` or `refined`:
+
+1. Run that label's `gh label create` command above, as written. Never add `--force`: it
+   overwrites the color and description of a label that already exists.
+2. Retry the original command once (the failed one changed nothing: `gh` checks labels
+   before it writes), and continue the flow.
+
+If the original command fails for any other reason, stop and report as usual, and create
+nothing. If `gh label create` fails (e.g. not enough permission on the repo) or the retry
+fails, stop and report what's done and what's missing:
+
+- `/refine-issue`: the refined body is written; `refined` isn't applied. Once the label
+  exists (someone with write access runs its command above), it can be added by hand with
+  `gh issue edit <n> --add-label "refined"`.
+- `/create-issue`: the issue wasn't created. If `epic` still doesn't exist, show its command
+  above: someone with write access must run it before the user re-runs `/create-issue`.
+
 ### Jira
 
 The commands below are those of **[`ankitpokhrel/jira-cli`](https://github.com/ankitpokhrel/jira-cli)** (the `jira` binary, v1.5+) — the specific CLI this workflow targets. Other tools also named `jira` have different command trees, so if you use a different one, map these operations to its equivalents. Install it (e.g. `brew install ankitpokhrel/jira-cli/jira-cli`, or a release binary from the repo), then run `jira init` to authenticate and select the default project.

@@ -56,7 +56,8 @@ report; don't guess. Otherwise:
   <owner>/<repo>#<m>, in another repository", and ask **before step 3 creates any
   branch**. Propose the standalone flow as the default: branch off `main`, PR into `main`,
   the standalone reference from step 6. If the user says a parent in this repository is meant to be an epic, they
-  label it `epic` themselves or approve labeling it, and the epic-child flow applies. A
+  label it `epic` themselves or approve labeling it (if labeling fails because `epic` doesn't
+  exist, follow **Workflow labels** in `workflow/issue-tracker.md`), and the epic-child flow applies. A
   parent in another repository can't become this repository's epic.
 
 ### 2. Pull the latest main
