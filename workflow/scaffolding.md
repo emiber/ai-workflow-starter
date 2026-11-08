@@ -138,11 +138,11 @@ After generation, protect `main` at the platform so the "never push/merge to `ma
 
 ## Golden rule
 
-The generated scaffolding has to start and run (even if it's a "hello world" per component). Don't leave a skeleton that doesn't compile.
+The generated scaffolding has to start and run (even if it's a "hello world" per component) and pass its own quality gate, run by the Template integrity check — or, if the gate can't run locally, report it as not run with the reason. Don't leave a skeleton that doesn't compile.
 
 ## Template integrity check
 
-After scaffolding, do a quick, lightweight self-check (no extra tooling — just verify, and fix what's off, except item 5, which only reports):
+After scaffolding, do a self-check (no tooling beyond the project's own — just verify, and fix what's off, except item 5, which only reports):
 
 1. **Workflow files are consistent.** Run `bash .github/scripts/check-workflow.sh` (the same check CI runs). It verifies that every command has its skill and delegates to it, that every skill's frontmatter has one `name` equal to its directory name and one nonblank `description` (in the small one-line form documented in the script, not a full YAML check), that every `workflow/` or `docs/` guide referenced from the entry files, commands, skills, or other guides exists (see below), that every command is listed in the entry files, and that `.workflow-config` is valid (`issue_tracker=github`, or `jira` with `jira_project=...`). Fix whatever it reports. If `bash` isn't available (e.g. Windows without Git Bash), do those same checks by hand and say so.
 
@@ -152,5 +152,9 @@ After scaffolding, do a quick, lightweight self-check (no extra tooling — just
 3. **CI is initialized.** `.github/workflows/ci.yml` no longer has the "template not initialized" guard step and runs the Quality gate commands from `docs/ARCHITECTURE.md`.
 4. **Branch protection attempted.** `/init-project` tried to protect `main` (require a PR, require the CI check, block direct pushes) and either applied it or reported the manual steps — the required check name matches the `ci.yml` job name.
 5. **License matches the choice.** The root `LICENSE` matches the license recorded in `docs/ARCHITECTURE.md`: absent for `none`; for MIT, the starter's text with the recorded holder in its copyright line; for another license, the fetched text with only `[year]`/`[fullname]` filled. The starter's holder (`Copyright (c) 2026 Emiliano`) appears at the root only if the user kept MIT under that name. `workflow/LICENSE` still holds the starter's notice, including that line. A chosen license with no root `LICENSE` is still off: report it with the command to add it later, `gh api licenses/<key> --jq .body > LICENSE`, then fill `[year]`/`[fullname]`. This item is report-only: it reports any mismatch and never deletes, moves or rewrites `LICENSE` or `workflow/LICENSE` (that would undo 4b's guard, which touches neither file), and it never writes license text from memory.
+6. **Quality gate passes.** Install the dependencies with the stack's normal install, the one that writes the lockfile where the stack has one (e.g. `npm install`, `uv sync`), not a locked install like `npm ci`: a fresh scaffold has no lockfile yet, so a locked install fails. Keep the lockfile it writes: it's part of the scaffold, and `ci.yml`'s locked install needs it. Then run the **lint** and **test-with-coverage** commands from the **Quality gate** section of `docs/ARCHITECTURE.md`, exactly as recorded. Both must pass.
+   - **On a failure** (e.g. a hello-world below the coverage threshold, or a lint error in generated code), fix the generated code or config (add the missing tests, fix the lint error) and re-run the gate. Never lower the coverage threshold, skip or delete tests, or loosen the lint config to get green (`workflow/principles.md`, "Never weaken tests to make them pass"). If a command still fails after your fixes, report it with its output; don't hide it. If that command is the install, lint and tests are "not run: the install failed".
+   - **If the toolchain isn't available locally** (e.g. the runtime isn't installed), report the gate as "not run: <reason>", never as passed. The scaffold doesn't abort.
+   - **Report** the result of lint and of tests with coverage, naming each command: pass, fail with its output, or "not run: <reason>". The quality gate has passed only when both passed in this run; a gate that still fails, or wasn't run, hasn't passed.
 
 Report anything still off; don't silently leave the template half-initialized.
