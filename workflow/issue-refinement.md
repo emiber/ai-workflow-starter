@@ -33,17 +33,25 @@ Ask the user **all** the questions needed to close those ambiguities. In small g
 
 Apply Ponytail: don't inflate the scope. If the issue asks for something small, keep it small. Detect and flag over-engineering in the original request.
 
-### 4. Write the refined issue
+### 4. Show the draft, get approval, then write
 
-Update the issue with the structure in `docs/ISSUE_TEMPLATE.md`:
+Draft the refined issue with the structure in `docs/ISSUE_TEMPLATE.md`. Nothing is written to the tracker until the user approves the draft:
+
+1. **Show** the complete refined body, not a summary, and say what will mark it refined: the `refined` label on GitHub; the refinement comment, and any label or status the project uses, on Jira.
+2. **Wait for explicit approval** ("ok", "go ahead", "approved", …). A question or a vague comment is not approval: answer it and ask again. If the user asks for changes, apply them, show the revised body, and wait again. If the user declines or aborts, write nothing, say the issue is unchanged, and stop.
+3. **Re-fetch** the issue with the step 1 command right before writing. If the body changed or new comments arrived since you last read it, show what changed, revise the draft, show it again, and go back to 2. Never overwrite from a stale copy.
+
+Only then write the body and mark the issue refined:
 
 - **GitHub**: `gh issue edit <n> --body-file <file>` and add the `refined` label with `gh issue edit <n> --add-label "refined"`. If that fails because `refined` doesn't exist, follow **Workflow labels** in `workflow/issue-tracker.md`.
 - **Jira**: `jira issue edit <KEY>` with the refined body, and leave a comment noting it was refined (`jira issue comment add <KEY>`). If the project uses a label/status for this, apply it.
 
+**Approval given in advance.** If the user's request explicitly says to publish without review (e.g. "refine and publish these, don't ask me"), that is the approval: skip 1 and 2. It covers only the issue as you read it, so the re-fetch (3) still applies: if the issue changed, stop, show what changed and the revised draft, and wait for explicit approval; if it didn't, write without asking. Record the decisions you made yourself under **Assumptions** as "delegated, not confirmed". Silence or "I'm away" is not approval.
+
 ### 5. Output
 
-Confirm to the user that the issue is refined and show them the result. Suggest running `/work-issue <n>` when they want to implement it.
+Confirm that the issue was written and marked refined, and give its URL (GitHub) or key (Jira). If it was published on approval given in advance, say that it was published unreviewed. Suggest running `/work-issue <n>` when they want to implement it.
 
 ## When NOT to refine so much
 
-For a typo fix or a one-line change, the full ritual isn't needed. Say so, confirm the scope in one sentence, and continue. The phase discipline (BMAD) is for real work, not for bureaucratizing trivial changes.
+For a typo fix or a one-line change, the full ritual isn't needed. Say so, confirm the scope in one sentence, and continue. That skips the questions, not step 4: any rewrite of the body is still shown and approved before it's written. The phase discipline (BMAD) is for real work, not for bureaucratizing trivial changes.
