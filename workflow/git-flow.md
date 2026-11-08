@@ -66,16 +66,36 @@ git checkout -b feat/<n>-<slug>
 `main`, and create that branch **lazily** from `main` if this is the first child (see
 `workflow/epics.md`).
 
+Find the integration branch **by the epic's number**, never by re-deriving a slug from
+the epic's title (the slug was chosen once, when the branch was created). Look for the
+`epic/<epicN>-` prefix locally and on `origin`:
+
 ```bash
-# epicN / epic-slug come from the parent epic
 git fetch origin
-if ! git show-ref --verify --quiet refs/heads/epic/<epicN>-<slug> \
-   && ! git ls-remote --exit-code --heads origin epic/<epicN>-<slug> >/dev/null; then
-  # first child → create the integration branch from the latest main and publish it
+git for-each-ref --format='%(refname:short)' "refs/heads/epic/<epicN>-*"   # local
+git ls-remote --heads origin "refs/heads/epic/<epicN>-*"                     # origin
+```
+
+If any of these commands exits non-zero (network, auth, missing remote), stop and report
+the error: only a command that succeeds with empty output means "no match". Otherwise,
+collect the distinct branch names from both outputs, after stripping `refs/heads/` from
+the `ls-remote` lines; the same name locally and on `origin` is one branch.
+
+- **Exactly one name** → that's the epic branch, whatever its slug.
+- **No name** (and every command succeeded) → this is the first child: create the branch
+  from the latest `main`, with a slug from the epic's title, and publish it:
+  ```bash
   git checkout main && git pull --ff-only origin main
   git checkout -b epic/<epicN>-<slug>
   git push -u origin epic/<epicN>-<slug>
-fi
+  ```
+- **More than one name** (e.g. `epic/6-foo` locally and `epic/6-bar` on `origin`) → stop
+  and ask the user which one is the epic's branch. Never pick one silently.
+
+From here on, every `epic/<epicN>-<slug>` in this guide means the branch this lookup
+resolved (or the one just created), never a slug re-derived from the title.
+
+```bash
 git checkout epic/<epicN>-<slug> && git pull --ff-only origin epic/<epicN>-<slug>
 git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 ```
