@@ -190,8 +190,10 @@ an **open PR**; never merge, never push to `main`.
    - A no-op isn't a failure: a pull or merge that reports "Already up to date" means
      there was nothing to bring in; go on. Step 4 still runs.
    - Resolve any conflicts and commit the merge before step 4: it validates a commit,
-     never a half-merged tree. If there are conflicts you can't resolve safely, stop and
-     report.
+     never a half-merged tree. When the merge stops on conflicts, first record the
+     **conflicted files** (`git diff --name-only --diff-filter=U`), before you resolve or
+     `git add` anything: the list is empty afterwards, and step 4's review needs it. If
+     there are conflicts you can't resolve safely, stop and report.
 4. **Validate the final revision.** Each child's PR was checked on its own, but merging
    `main` can still break the combined result (e.g. `main` changed an interface a child
    uses). Before anything is pushed, check the exact commit step 5 will publish, in this
@@ -213,15 +215,21 @@ an **open PR**; never merge, never push to `main`.
      unless there's a real reason not to; a per-file reason never waives the total.
    - **Integration review**, read-only, following `workflow/pr-review.md` in local diff
      mode as an **epic integration**. As in `workflow/git-flow.md` step 5, give a fresh
-     agent only the epic, its child list (step 1), the candidate SHA and the merge
-     context; if you can't start one, run the review yourself and record it as inline.
-     The merge context is `git diff origin/epic/<n>-<slug> HEAD` (all this run adds to
-     the published epic: what `main` brought in, the conflict resolutions, any fixes)
-     and, if step 3 made a merge commit `<merge>`, `git show --cc <merge>` (only the
-     hunks that differ from both parents: the manual resolutions). The review checks
-     these, and how they meet the epic's own changes, against the acceptance criteria
-     of the epic and of the children they affect — correctness, security, docs —
-     reading the affected files in full. It doesn't re-review unchanged child work.
+     agent only the epic, its child list (step 1), the base `origin/main` (as fetched in
+     step 3; never a local `main`, which this flow doesn't update), the candidate SHA and
+     the merge context; if you can't start one, run the review yourself and record it as
+     inline. The merge context is `git diff origin/epic/<n>-<slug> HEAD` (all this run
+     adds to the published epic: what `main` brought in, the conflict resolutions, any
+     fixes) and, if step 3 made a merge commit `<merge>`, the conflicted files recorded
+     in step 3. The review reads each conflicted file's resolution in full, against both
+     parents (`git diff <merge>^1 <merge> -- <file>`, `git diff <merge>^2 <merge> -- <file>`);
+     where Git is 2.36 or newer, `git show --remerge-diff <merge>` also shows how each
+     conflict was resolved. `git show --cc` isn't enough: it leaves out a resolution
+     that keeps one side, such as dropping what `main` changed. The review
+     checks these, and how they meet the epic's own changes, against the acceptance
+     criteria of the epic and of the children they affect — correctness, security,
+     docs — reading the affected files in full. It doesn't re-review unchanged child
+     work.
      With no conflicts it still checks those interactions and records "no manual
      resolutions"; with nothing new from `main`, it records that. It reports; it
      doesn't fix.
@@ -269,7 +277,7 @@ an **open PR**; never merge, never push to `main`.
    - Lint: <command> — pass | n/a (<reason>)
    - Tests: <command(s)> — pass | n/a (<reason>)
    - Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason> | n/a (<reason>)
-   - Self-review: integration review of <the manual resolutions | no manual resolutions>, <the integration fixes | no fixes> and what main brought in; blockers: <found and fixed | none>; suggestions not applied: <list | none> (separate agent | inline)
+   - Self-review: integration review of <the conflicted files' resolutions | no manual resolutions>, <the integration fixes | no fixes> and what main brought in; blockers: <found and fixed | none>; suggestions not applied: <list | none> (separate agent | inline)
    - Security: pass (<what the integration touched>) | no security surface touched by the integration
    - Docs: updated <files> | not needed (<reason>)
 

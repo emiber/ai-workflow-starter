@@ -15,7 +15,7 @@ Same checks, different inputs. You're given an issue number and a base branch:
 - **Diff** = `git diff <base>...HEAD`. Read the changed files in full, not only the hunks.
 - **Skip** the Definition of Done rows that need an open PR (target branch, Verification section) — they're checked once the PR exists.
 - **Output** the same report (Intent, Blockers, Suggestions, Summary). Still read-only: report, don't fix.
-- **Epic integration** — the final-revision review `/finish-epic` runs before it pushes (`workflow/epics.md` step 4), so there's no PR yet. The linked issues are the epic and the children you were given, each fetched as above; besides `git diff <base>...HEAD`, read the merge context you were given. Review the conflict resolutions, the integration fixes, and how what `main` brought in meets the epic's changes, against the acceptance criteria of the epic and of the children they affect; don't re-review unchanged child work.
+- **Epic integration** — the final-revision review `/finish-epic` runs before it pushes (`workflow/epics.md` step 4), so there's no PR yet. The linked issues are the epic and the children you were given, each fetched as above; `<base>` is `origin/main`, as given, never a local `main` (`/finish-epic` doesn't update it, so it may be stale); besides `git diff <base>...HEAD`, read the merge context you were given, including each conflicted file's resolution in full. Review the conflict resolutions, the integration fixes, and how what `main` brought in meets the epic's changes, against the acceptance criteria of the epic and of the children they affect; don't re-review unchanged child work.
 
 ## Before starting: resolve the tracker
 
