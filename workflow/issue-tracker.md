@@ -92,6 +92,13 @@ parent/child commands**; other guides reference it instead of repeating the synt
   Last resort for parent detection, if the payload exposes no parent field on your API
   version: treat the issue as a child when it appears in some `epic`-labeled issue's
   `sub_issues` list. Only use these when the native commands aren't available.
+
+  All these commands, like `gh issue view <n>` above, name issues by bare number in the
+  current repository (`gh`'s default repository, which also fills `{owner}/{repo}`). Use
+  them only where that is established as the issue's repository, as when `/work-issue`,
+  `/create-issue` or `/refine-issue` acts on this project's own issues. An issue that may
+  be in another repository, such as a PR's linked issue or its parent in `/review-pr`, is
+  read by its URL instead (`gh issue view <issue-url>`; see `workflow/pr-review.md` step 2).
 - **Jira**: an epic is the native **Epic** issue type; children carry the **Epic Link /
   parent** field. No label convention needed.
 
