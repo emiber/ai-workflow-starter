@@ -2,7 +2,9 @@
 # /init-project EXTENDS this file with entries for the chosen stack — it must
 # not replace it. Keep these stack-agnostic essentials at the top.
 #
-# Rule: the patterns in this baseline must never match ordinary source files.
+# Rule: the folder-name and secret-file patterns in this baseline must not
+# match ordinary source files. (The broad extension globs *.crt, *.key, *.pem,
+# *.local and *.log can still match test fixtures; negate with ! where needed.)
 # So the generic output folder names (build, dist, out, tmp, temp, logs,
 # coverage) are root-only (/build/, /dist/, ...). Nested ones (e.g. in monorepo
 # packages) and archives (*.zip, *.tgz, ...) are stack-specific: they belong in
@@ -25,6 +27,8 @@
 id_rsa
 id_dsa
 *.crt
+# Explicit data-file names, not secrets.* / credentials.*: those globs also
+# match source files (credentials.ts, secrets.py).
 secrets.json
 secrets.yml
 secrets.yaml
