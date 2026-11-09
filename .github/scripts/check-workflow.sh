@@ -299,7 +299,7 @@ fi
 #    A project that doesn't publish the plugin can delete .claude-plugin/.
 str_re='"([^"]*)"'
 first_name_re='"name"[[:space:]]*:[[:space:]]*"([^"]*)"'
-skills_re='"skills"[[:space:]]*:[[:space:]]*\[([^]]*)\]'
+skills_re='"skills"[[:space:]]*:[[:space:]]*\[([^]]*)]'
 pm=.claude-plugin/plugin.json
 mm=.claude-plugin/marketplace.json
 if [ -e .claude-plugin ]; then

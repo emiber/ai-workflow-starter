@@ -222,9 +222,9 @@ an **open PR**; never merge, never push to `main`.
      unless there's a real reason not to; a per-file reason never waives the total.
    - **Integration review**, read-only, following `workflow/pr-review.md` in local diff
      mode as an **epic integration**. As in `workflow/git-flow.md` step 5, give a fresh
-     agent only the epic, its child list (step 1), the base `origin/main` (as fetched in
-     step 3; never a local `main`, which this flow doesn't update), the candidate SHA and
-     the merge context; if you can't start one, run the review yourself and record it as
+     agent only the workflow root it reads the guides from, the epic, its child list
+     (step 1), the base `origin/main` (as fetched in step 3; never a local `main`, which
+     this flow doesn't update), the candidate SHA and the merge context; if you can't start one, run the review yourself and record it as
      inline. The merge context is `git diff origin/epic/<n>-<slug> HEAD` (all this run
      adds to the published epic: what `main` brought in, the conflict resolutions, any
      fixes) and, if step 3 recorded a merge commit `<merge>`, its SHA and the conflicted

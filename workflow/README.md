@@ -30,7 +30,7 @@ From a shell, run `claude plugin marketplace add emiber/ai-workflow-starter`, th
 
 - **Models.** The plugin doesn't switch models. With `claude --model opusplan`, run `/model opus` before creating or refining issues, and `/model opusplan` before `/ai-workflow:work-issue` (see `workflow/model-strategy.md`).
 - **Your project's files.** The skills read the workflow's guides from the plugin, and your project's files from your repository:
-  - `.workflow-config`: the first issue command asks for your tracker (GitHub by default) and saves it there.
+  - `.workflow-config`: `/ai-workflow:create-issue` and `/ai-workflow:refine-issue` ask for your tracker the first time (GitHub by default) and save it there. The other skills stop until the file exists, so run one of those two first, or create the file with `issue_tracker=github`, and commit it.
   - the **Quality gate** in `docs/ARCHITECTURE.md`: if it's missing, `/ai-workflow:work-issue` detects the lint and test commands from your project and proposes recording them.
 - **Updates.** The plugin has no `version`, so every merge to this repo's `main` is a new version. Get it with `claude plugin marketplace update ai-workflow-starter`, then `claude plugin update ai-workflow@ai-workflow-starter`, or turn on auto-update for the marketplace under `/plugin` → **Marketplaces**. Run `/reload-plugins` afterwards.
 - **Uninstall.** Run `claude plugin uninstall ai-workflow@ai-workflow-starter`. To also drop the marketplace, run `claude plugin marketplace remove ai-workflow-starter`.

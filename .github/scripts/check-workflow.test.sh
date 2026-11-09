@@ -83,6 +83,9 @@ plugin_skill_without_skill_md() { demo_plugin '["./.agents/skills/demo", "./.age
 plugin_exposes_init_project() { demo_plugin '["./.agents/skills/demo", "./.agents/skills/init-project"]'; }
 plugin_skill_outside_agents() { demo_plugin '["./skills/demo"]'; }
 plugin_without_skills_array() { demo_plugin '"./.agents/skills/"'; }
+plugin_with_empty_skills() { demo_plugin '[]'; }
+plugin_without_name() { demo_plugin && printf '{\n  "skills": ["./.agents/skills/demo"]\n}\n' > .claude-plugin/plugin.json; }
+marketplace_without_plugins() { demo_plugin && printf '{\n  "name": "demo-market",\n  "plugins": []\n}\n' > .claude-plugin/marketplace.json; }
 
 # Skill frontmatter cases. demo_skill <line>...: rewrites the demo skill as just
 # these lines between `---` delimiters.
@@ -234,11 +237,14 @@ pm=.claude-plugin/plugin.json
 run_case "plugin manifests that match" 0 "Workflow integrity: OK." plugin_ok
 run_case "plugin without a marketplace manifest" 1 $'::error::missing .claude-plugin/marketplace.json (.claude-plugin/ needs both manifests)\nWorkflow integrity: 1 problem(s) found.' plugin_without_marketplace
 run_case "marketplace without a plugin manifest" 1 $'::error::missing .claude-plugin/plugin.json (.claude-plugin/ needs both manifests)\nWorkflow integrity: 1 problem(s) found.' marketplace_without_plugin
-run_case "plugin names that don't match" 1 ".claude-plugin/marketplace.json lists plugin 'other', but $pm names it 'demo-plugin'" plugin_name_mismatch
+run_case "plugin names that don't match" 1 $'::error::.claude-plugin/marketplace.json lists plugin \'other\', but '"$pm names it 'demo-plugin'"$'\nWorkflow integrity: 1 problem(s) found.' plugin_name_mismatch
 run_case "plugin skill with no SKILL.md" 1 $'::error::'"$pm lists ./.agents/skills/ghost, which has no SKILL.md"$'\nWorkflow integrity: 1 problem(s) found.' plugin_skill_without_skill_md
 run_case "plugin that exposes init-project" 1 "$pm exposes init-project" plugin_exposes_init_project
 run_case "plugin skill outside .agents/skills/" 1 "$pm lists skill path ./skills/demo; use ./.agents/skills/<name>" plugin_skill_outside_agents
 run_case "plugin skills that aren't an array" 1 "$pm needs a \"skills\" array" plugin_without_skills_array
+run_case "plugin with an empty skills array" 1 $'::error::'"$pm lists no skills"$'\nWorkflow integrity: 1 problem(s) found.' plugin_with_empty_skills
+run_case "plugin manifest without a name" 1 $'::error::'"$pm has no \"name\""$'\nWorkflow integrity: 1 problem(s) found.' plugin_without_name
+run_case "marketplace that lists no plugin" 1 $'::error::.claude-plugin/marketplace.json lists no plugin\nWorkflow integrity: 1 problem(s) found.' marketplace_without_plugins
 
 skill=".agents/skills/demo/SKILL.md: frontmatter"
 run_case "fields in either order, optional and nested fields, body text" 0 "Workflow integrity: OK." reordered_and_optional_fields
