@@ -29,14 +29,17 @@ It gives you two things:
    `opusplan` uses Opus only in plan mode, so run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`, and switch back with `/model opusplan` before `/work-issue`.
 4. **Scaffold the project** — the agent asks what you're building and generates a runnable base (this replaces the placeholder root `README.md` with your project's own):
    ```
+   /model opus
    /init-project
    ```
 5. **Protect `main`** — `/init-project` shows the repo it resolved from your `origin`, then checks, read-only, whether its `main` already has branch protection or an active ruleset. It never changes protection that's already there. Only when it can confirm there's none does it ask, and on your yes it creates protection (require a PR, require the CI and `Workflow integrity` checks to pass, block direct pushes). Whenever it doesn't — protection already exists, it couldn't confirm there's none (e.g. you lack admin), `origin` isn't a single github.com repo of yours, `main` isn't on GitHub yet, you said no, or the request failed — it says why and prints the manual steps. The baseline is a rule for `main` that requires a pull request, requires two status checks to pass (your CI job's `name:` from `.github/workflows/ci.yml`, and `Workflow integrity`), and disallows direct pushes. Look in repo **Settings → Branches** and **Settings → Rules → Rulesets** first: if a rule or ruleset already applies to `main` (including one from your organization), keep it and have whoever administers it check it against that baseline; don't delete or replace it. Only if none applies, add that rule yourself. This is what makes "never push to `main`" real instead of just a convention.
 6. **Land the scaffold through a PR** — `/init-project` leaves the generated files uncommitted, then offers to commit them on a `chore/init-project` branch, push it, and open a PR into `main`. It does that only on your yes, and never pushes to `main`. That PR is the scaffold's first CI run: merge it before you start the issue → PR loop. If it can't offer (step 5's repo check failed, `main` isn't on GitHub, or the quality gate didn't pass), it says what to fix and prints the commands to run once you have.
 7. **Work in the issue → PR loop** — create an issue (optional), refine it, then implement it:
    ```
+   /model opus
    /create-issue "contacts list not paginating past page 2"
    /refine-issue 42
+   /model opusplan
    /work-issue 42
    ```
    The agent stops at an open PR; it never merges, and it won't commit or push unless you ask (running `/work-issue` is that ask).
