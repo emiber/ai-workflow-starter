@@ -11,8 +11,9 @@
 
 First create your own repo with **Use this template** (see "Getting started" in [workflow/README.md](workflow/README.md)) and work in a clone of it, not a plain clone of the starter.
 
-1. Open Claude Code in this folder: `claude --model opusplan`. It uses Opus only in plan mode, so run `/init-project`, `/create-issue` and `/refine-issue` with `/model opus`, and switch back with `/model opusplan` before `/work-issue`.
-2. Run `/init-project` to scaffold the project (this replaces this README).
-3. Then use `/refine-issue <n>` and `/work-issue <n>` for the issue → PR loop.
+1. Open Claude Code in this folder: `claude --model opusplan`. It uses Opus only in plan mode, so the planning commands below switch to Opus first.
+2. Run `/model opus`, then `/init-project` to scaffold the project (this replaces this README).
+3. Still on Opus, write and refine issues with `/create-issue` and `/refine-issue <n>`.
+4. Run `/model opusplan` before `/work-issue <n>`, which takes a refined issue to a PR.
 
 Full details: **[workflow/README.md](workflow/README.md)**.
