@@ -28,7 +28,7 @@ jira_project=ABC
      > Which issue tracker do you use in this project? (github / jira) [default: github]
 
      If the user doesn't answer or answers empty, assume **github**. Add `issue_tracker=<answer>` to `.workflow-config`, creating the file if it's missing (on Jira, **Project selection** below still applies to `jira_project`). Then tell the user to commit the file: until it's committed, CI's workflow integrity check fails.
-   - **`/review-pr`, and the `/work-issue` and `/finish-epic` preflights**, are read-only: they never write `.workflow-config`. Stop and report how to restore it: `git checkout -- .workflow-config`, or create it (`issue_tracker=github`, or `issue_tracker=jira` plus `jira_project=<KEY>`) and commit it.
+   - **`/review-pr`, and the `/work-issue` and `/finish-epic` preflights**, are read-only: they never write `.workflow-config`. Stop and report how to fix it: restore it with `git checkout -- .workflow-config` if the repository tracks it, or create it (`issue_tracker=github`, or `issue_tracker=jira` plus `jira_project=<KEY>`) and commit it. Running `/create-issue` or `/refine-issue` once also creates it, as above. That's the usual first step in a repository that uses the workflow as a plugin, which has no `.workflow-config` until then.
 
 ## Commands per tracker
 
