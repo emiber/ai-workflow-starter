@@ -28,7 +28,8 @@ jobs:
       # root CLAUDE.md always triggers one, and errors still do.
       - name: Install Claude Code
         if: hashFiles('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json') != ''
-        run: npm install --global --ignore-scripts @anthropic-ai/claude-code@2.1.319
+        # Its postinstall script fetches the native binary, so don't pass --ignore-scripts.
+        run: npm install --global @anthropic-ai/claude-code@2.1.319
       - name: Validate the Claude Code plugin and marketplace
         if: hashFiles('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json') != ''
         env:
