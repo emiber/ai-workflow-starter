@@ -27,3 +27,5 @@ Already have a repository? Install the issue → PR workflow as a Claude Code pl
 ```
 
 Then run `/ai-workflow:create-issue`, `/ai-workflow:refine-issue <n>`, `/ai-workflow:work-issue <n>`, `/ai-workflow:finish-epic <n>` or `/ai-workflow:review-pr <n>`. Updating, uninstalling and which model to use for each skill are covered in [workflow/README.md](workflow/README.md#use-the-workflow-in-any-repository-claude-code-plugin).
+
+In Codex, run `codex plugin marketplace add emiber/ai-workflow-starter`, then `codex plugin add ai-workflow@ai-workflow-starter`, and invoke the skills as `$ai-workflow:<skill>` ([details](workflow/README.md#use-the-workflow-in-any-repository-codex-plugin)).
