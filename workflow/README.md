@@ -49,10 +49,10 @@ codex plugin add ai-workflow@ai-workflow-starter
 - **Invoke.** Type `$ai-workflow:create-issue <description>`, `$ai-workflow:refine-issue <n>`, `$ai-workflow:work-issue <n>`, `$ai-workflow:finish-epic <n>` or `$ai-workflow:review-pr <n>`. You can also pick them from `/skills` or the `$` popup, or just ask ("refine issue 42").
 - **Models.** Codex has its own models. Use a stronger one, or a higher reasoning effort, to create and refine issues; `workflow/model-strategy.md` explains the split for Claude Code.
 - **Your project's files** work as in the Claude Code plugin: the skills read the guides from the plugin and `.workflow-config` and `docs/ARCHITECTURE.md` from your repository ([see above](#use-the-workflow-in-any-repository-claude-code-plugin)).
-- **Updates.** Codex refreshes Git marketplaces when a session starts. To update now, run `codex plugin marketplace upgrade ai-workflow-starter`, which reinstalls the plugin from the latest revision.
+- **Updates.** Codex refreshes configured Git marketplaces automatically. To update now, run `codex plugin marketplace upgrade ai-workflow-starter`, which reinstalls the plugin from the latest revision.
 - **Uninstall.** Run `codex plugin remove ai-workflow@ai-workflow-starter`, then `codex plugin marketplace remove ai-workflow-starter`.
 - **Not in the plugin: `/init-project`.** Start new projects from the template ([Getting started](#getting-started)).
-- **Don't install it in a repository made from the template.** Codex already lists that repository's own skills as `ai-workflow:<name>`. A second copy under the same names makes a typed `$ai-workflow:<name>` ambiguous; if you do have both, pick the skill from the `$` popup.
+- **In a repository made from the template.** Codex already lists that repository's own skills as `ai-workflow:<name>`. The plugin is installed per user, so with it installed a second copy appears under the same names, and a typed `$ai-workflow:<name>` is ambiguous there. Pick the skill from the `$` popup, or delete `.claude-plugin/` in that repository to give its own skills their plain names back.
 
 ## Getting started
 
@@ -124,7 +124,7 @@ There is no universal format. The logic lives in neutral markdown (`workflow/`, 
 | Codex, as a plugin | `.claude-plugin/` (Claude-compatible) → the same five playbooks, in any repository | Full, except `/init-project` (see [the Codex plugin section](#use-the-workflow-in-any-repository-codex-plugin)) |
 | GitHub Copilot | `.github/copilot-instructions.md` | Good (natural language out of the box; slash commands if you add `.github/prompts/` files) |
 
-All three point to the same `workflow/`. The difference is how much each one honors the interactive flow.
+Every agent points to the same `workflow/`. The difference is how much each one honors the interactive flow.
 
 ## Language
 
@@ -158,7 +158,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 ├── .gitattributes                  # Keeps *.sh with LF endings (runs from a Windows checkout)
 ├── .env.example                    # Placeholder env vars; copy to gitignored .env
 ├── .workflow-config                # Issue tracker selection (github by default)
-├── .claude-plugin/                 # Claude Code plugin + marketplace; the plugin root is this repo's root
+├── .claude-plugin/                 # Claude Code plugin + marketplace (Codex reads it too); the plugin root is this repo's root
 │   ├── marketplace.json            # Marketplace `ai-workflow-starter`, listing the `ai-workflow` plugin
 │   └── plugin.json                 # Plugin `ai-workflow`: five of the .agents/skills/ playbooks (not init-project)
 ├── .github/
