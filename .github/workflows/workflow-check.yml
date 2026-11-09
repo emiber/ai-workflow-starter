@@ -23,3 +23,14 @@ jobs:
         run: bash .github/scripts/check-workflow.test.sh
       - name: Check commands, skills, and guide references
         run: bash .github/scripts/check-workflow.sh
+      # The Claude Code plugin (.claude-plugin/), when the repo ships one. Pinned,
+      # never latest; needs no API key. Warnings don't fail the job: the template's
+      # root CLAUDE.md always triggers one, and errors still do.
+      - name: Install Claude Code
+        if: hashFiles('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json') != ''
+        run: npm install --global @anthropic-ai/claude-code@2.1.319
+      - name: Validate the Claude Code plugin and marketplace
+        if: hashFiles('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json') != ''
+        env:
+          DISABLE_AUTOUPDATER: "1"
+        run: claude plugin validate .

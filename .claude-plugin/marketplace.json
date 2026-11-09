@@ -1,0 +1,14 @@
+{
+  "name": "ai-workflow-starter",
+  "owner": {
+    "name": "Emiliano Berestovoy"
+  },
+  "description": "The AI workflow starter's issue-to-PR workflow, packaged as a Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "ai-workflow",
+      "source": "./",
+      "description": "Issue-to-PR workflow skills: create, refine and implement issues, close out epics, and review PRs."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ai-workflow",
+  "description": "Issue-to-PR workflow skills: create and refine issues, implement them through plan approval, a quality gate and a self-review, close out epics, and review PRs.",
+  "author": {
+    "name": "Emiliano Berestovoy"
+  },
+  "homepage": "https://github.com/emiber/ai-workflow-starter",
+  "repository": "https://github.com/emiber/ai-workflow-starter",
+  "license": "MIT",
+  "keywords": ["workflow", "issues", "pull-requests", "github", "jira"],
+  "skills": [
+    "./.agents/skills/create-issue",
+    "./.agents/skills/refine-issue",
+    "./.agents/skills/work-issue",
+    "./.agents/skills/finish-epic",
+    "./.agents/skills/review-pr"
+  ]
+}

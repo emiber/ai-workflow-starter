@@ -17,3 +17,13 @@ First create your own repo with **Use this template** (see "Getting started" in 
 4. Run `/model opusplan` before `/work-issue <n>`, which takes a refined issue to a PR.
 
 Full details: **[workflow/README.md](workflow/README.md)**.
+
+## Use the workflow in any repository
+
+Already have a repository? Install the issue → PR workflow as a Claude Code plugin instead. This takes one step on Claude Code 2.1.275 or later:
+
+```
+/plugin install ai-workflow --marketplace emiber/ai-workflow-starter
+```
+
+Then run `/ai-workflow:create-issue`, `/ai-workflow:refine-issue <n>`, `/ai-workflow:work-issue <n>`, `/ai-workflow:finish-epic <n>` or `/ai-workflow:review-pr <n>`. Updating, uninstalling and which model to use for each skill are covered in [workflow/README.md](workflow/README.md#use-the-workflow-in-any-repository-claude-code-plugin).

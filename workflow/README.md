@@ -9,6 +9,34 @@ It gives you two things:
 1. **Interactive scaffolding** — the agent asks what kind of project you're building, defines the components (APIs, frontend, database, queues, etc.), suggests technologies, and generates the base.
 2. **Issue → PR workflow** — interactive issue refinement and the `main → branch → implementation → PR` cycle.
 
+## Use the workflow in any repository (Claude Code plugin)
+
+In Claude Code, the main way to use the issue → PR workflow is to install it once as a plugin. You can then use it in any repository, including ones not created from this template, and updates come from this repo instead of a per-project copy:
+
+```
+/plugin marketplace add emiber/ai-workflow-starter
+/plugin install ai-workflow@ai-workflow-starter
+```
+
+From a shell, run `claude plugin marketplace add emiber/ai-workflow-starter`, then `claude plugin install ai-workflow@ai-workflow-starter`. Claude Code 2.1.275 or later also takes one step: `/plugin install ai-workflow --marketplace emiber/ai-workflow-starter`. Then run `/reload-plugins` or start a new session.
+
+| Skill | What it does | Model |
+|---|---|---|
+| `/ai-workflow:create-issue <description>` | Creates an issue from a description (light capture) | Opus |
+| `/ai-workflow:refine-issue <n>` | Refines an issue until it's implementable | Opus |
+| `/ai-workflow:work-issue <n>` | Implements a refined issue up to an open PR | Sonnet |
+| `/ai-workflow:finish-epic <n>` | Opens an epic's integration PR | Sonnet |
+| `/ai-workflow:review-pr <n>` | Reviews a PR against its issue and the Definition of Done | Sonnet |
+
+- **Models.** The plugin doesn't switch models. With `claude --model opusplan`, run `/model opus` before creating or refining issues, and `/model opusplan` before `/ai-workflow:work-issue` (see `workflow/model-strategy.md`).
+- **Your project's files.** The skills read the workflow's guides from the plugin, and your project's files from your repository:
+  - `.workflow-config`: the first issue command asks for your tracker (GitHub by default) and saves it there.
+  - the **Quality gate** in `docs/ARCHITECTURE.md`: if it's missing, `/ai-workflow:work-issue` detects the lint and test commands from your project and proposes recording them.
+- **Updates.** The plugin has no `version`, so every merge to this repo's `main` is a new version. Get it with `claude plugin marketplace update ai-workflow-starter`, then `claude plugin update ai-workflow@ai-workflow-starter`, or turn on auto-update for the marketplace under `/plugin` → **Marketplaces**. Run `/reload-plugins` afterwards.
+- **Uninstall.** Run `claude plugin uninstall ai-workflow@ai-workflow-starter`. To also drop the marketplace, run `claude plugin marketplace remove ai-workflow-starter`.
+- **Not in the plugin: `/init-project`.** To start a new project with the scaffolding, CI, the integrity check and branch protection, use the template ([Getting started](#getting-started) below). In a repository made from the template, its own `/create-issue`…`/review-pr` commands and the plugin's `/ai-workflow:*` skills coexist, and each reads its own copy of the guides.
+- **The rules apply while a skill runs.** The hard rules (`workflow/rules.md`) bind the agent during a workflow skill. The plugin adds no always-on context to your other sessions.
+
 ## Getting started
 
 1. **Create your own repo from this one** — on GitHub, click **Use this template** → **Create a new repository**, then clone *your* new repo and work in that clone. It has fresh history, your own `origin`, and `main` already on GitHub, which `/init-project` needs to protect `main` and land the scaffold. Don't use a plain `git clone` of this repo: its `origin` is the starter, so `/init-project` won't protect `main` or open the scaffold's PR there.
@@ -74,6 +102,7 @@ There is no universal format. The logic lives in neutral markdown (`workflow/`, 
 | Agent | File it reads | Support |
 |---|---|---|
 | Claude Code | `CLAUDE.md` + `.claude/commands/*.md` (thin wrappers over `.agents/skills/`) | Full (slash commands, interactive refinement, self-review subagent) |
+| Claude Code, as a plugin | `.claude-plugin/` → five of the `.agents/skills/` playbooks, in any repository | Full, except `/init-project` (see [the plugin section](#use-the-workflow-in-any-repository-claude-code-plugin)) |
 | Codex | `AGENTS.md` | Full (runs the `.agents/skills/` playbooks directly, plus natural language) |
 | GitHub Copilot | `.github/copilot-instructions.md` | Good (natural language out of the box; slash commands if you add `.github/prompts/` files) |
 
@@ -111,6 +140,9 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 ├── .gitattributes                  # Keeps *.sh with LF endings (runs from a Windows checkout)
 ├── .env.example                    # Placeholder env vars; copy to gitignored .env
 ├── .workflow-config                # Issue tracker selection (github by default)
+├── .claude-plugin/                 # Claude Code plugin + marketplace; the plugin root is this repo's root
+│   ├── marketplace.json            # Marketplace `ai-workflow-starter`, listing the `ai-workflow` plugin
+│   └── plugin.json                 # Plugin `ai-workflow`: five of the .agents/skills/ playbooks (not init-project)
 ├── .github/
 │   ├── copilot-instructions.md     # Pointer for Copilot
 │   ├── scripts/
@@ -118,7 +150,7 @@ A few rules the agents enforce (full detail in `workflow/principles.md` and `wor
 │   │   └── check-workflow.test.sh  # Tests for the check, on a synthetic fixture
 │   └── workflows/
 │       ├── ci.yml                  # Lint + tests + coverage threshold (default 85%) on PRs
-│       └── workflow-check.yml      # Runs the check's tests, then the check, on PRs
+│       └── workflow-check.yml      # Runs the check's tests, the check, and the plugin validator, on PRs
 ├── .claude/commands/               # Claude Code slash commands (thin wrappers over .agents/skills/)
 │   ├── init-project.md             # Interactive scaffolding
 │   ├── create-issue.md             # Create a new issue in the tracker

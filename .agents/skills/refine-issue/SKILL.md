@@ -7,6 +7,8 @@ description: Refine and clarify an issue (GitHub or Jira) by asking every questi
 
 Refine the target issue (its number on GitHub or key on Jira — provided as the argument, or stated by the user). This is the canonical playbook: Codex runs it directly and the Claude Code `/refine-issue` command delegates to it. The detailed rules live in `workflow/`.
 
+**Where to read files.** This skill may run from a copy of the workflow installed outside the repository you're working in, such as a plugin. Read **workflow files** from the **workflow root**: `workflow/*.md` and `docs/ISSUE_TEMPLATE.md`, including every such path one guide gives for another. The workflow root is the directory that holds this skill's `.agents/` folder, `../../..` from the folder this `SKILL.md` is in. Read **project files** from the current repository: `.workflow-config`, `docs/ARCHITECTURE.md`, the source, the CI config and git. In a repository created from the template, both are the same directory. If a workflow file can't be read from the workflow root, stop and report its path; never use a same-named file from the current repository instead.
+
 1. Read `workflow/rules.md`, `workflow/principles.md`, `workflow/issue-refinement.md`, and `workflow/issue-tracker.md`.
 2. Resolve the issue tracker per `workflow/issue-tracker.md` — `.workflow-config` ships preset to GitHub and is required. Only if it's missing or has no `issue_tracker`, ask (an empty answer means GitHub), write the answer to the file, and tell the user to commit it: CI's workflow integrity check fails until it's committed. Make sure the tracker CLI is authenticated (`gh auth status` for GitHub, `jira me` for Jira).
 3. Fetch the issue with the matching tracker command (number on GitHub, key on Jira).

@@ -288,6 +288,63 @@ else
   esac
 fi
 
+# 5. The Claude Code plugin (.claude-plugin/), if there is one: both manifests,
+#    matching plugin names, and listed skills that exist, without init-project.
+#    `claude plugin validate .` in CI checks the JSON itself; this reads only a
+#    small text subset of it, like check_skill does for frontmatter:
+#    - plugin.json's plugin name is its first "name" key, so keep "name" first;
+#    - the marketplace's plugin name is the first "name" key after "plugins";
+#    - plugin.json's "skills" is one [...] array of "./.agents/skills/<name>"
+#      strings, each with a SKILL.md, and none of them init-project.
+#    A project that doesn't publish the plugin can delete .claude-plugin/.
+str_re='"([^"]*)"'
+first_name_re='"name"[[:space:]]*:[[:space:]]*"([^"]*)"'
+skills_re='"skills"[[:space:]]*:[[:space:]]*\[([^]]*)\]'
+pm=.claude-plugin/plugin.json
+mm=.claude-plugin/marketplace.json
+if [ -e .claude-plugin ]; then
+  [ -f "$pm" ] || fail "missing $pm (.claude-plugin/ needs both manifests)"
+  [ -f "$mm" ] || fail "missing $mm (.claude-plugin/ needs both manifests)"
+  if [ -f "$pm" ] && [ -f "$mm" ]; then
+    read_file "$pm" content
+    plugin_name=""
+    [[ $content =~ $first_name_re ]] && plugin_name=${BASH_REMATCH[1]}
+    [ -n "$plugin_name" ] || fail "$pm has no \"name\""
+    if [[ $content =~ $skills_re ]]; then
+      rest=${BASH_REMATCH[1]}
+      listed=0
+      while [[ $rest =~ $str_re ]]; do
+        p=${BASH_REMATCH[1]}
+        rest=${rest#*"${BASH_REMATCH[0]}"}
+        listed=$((listed + 1))
+        p=${p%/}
+        sn=${p#./.agents/skills/}
+        if [ "$sn" = "$p" ] || [ -z "$sn" ] || [[ $sn == */* ]]; then
+          fail "$pm lists skill path $p; use ./.agents/skills/<name>"
+        elif [ "$sn" = init-project ]; then
+          fail "$pm exposes init-project; new projects are bootstrapped from the template, not the plugin"
+        elif [ ! -f ".agents/skills/$sn/SKILL.md" ]; then
+          fail "$pm lists $p, which has no SKILL.md"
+        fi
+      done
+      [ "$listed" -gt 0 ] || fail "$pm lists no skills"
+    else
+      fail "$pm needs a \"skills\" array of ./.agents/skills/<name> folders"
+    fi
+    read_file "$mm" content
+    market_name=""
+    if [[ $content == *'"plugins"'* ]]; then
+      rest=${content#*'"plugins"'}
+      [[ $rest =~ $first_name_re ]] && market_name=${BASH_REMATCH[1]}
+    fi
+    if [ -z "$market_name" ]; then
+      fail "$mm lists no plugin"
+    elif [ -n "$plugin_name" ] && [ "$market_name" != "$plugin_name" ]; then
+      fail "$mm lists plugin '$market_name', but $pm names it '$plugin_name'"
+    fi
+  fi
+fi
+
 if [ "$errors" -gt 0 ]; then
   echo "Workflow integrity: $errors problem(s) found."
   exit 1

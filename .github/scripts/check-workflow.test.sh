@@ -68,6 +68,22 @@ prefix_only_listing() {
 missing_entry_file() { rm CLAUDE.md; }
 missing_workflow_config() { rm .workflow-config; }
 
+# Plugin cases. demo_plugin [skills array] [marketplace plugin name]: writes both
+# manifests, with the demo skill and matching names unless told otherwise.
+demo_plugin() {
+  mkdir -p .claude-plugin &&
+    printf '{\n  "name": "demo-plugin",\n  "author": { "name": "Someone" },\n  "skills": %s\n}\n' "${1:-[\"./.agents/skills/demo\"]}" > .claude-plugin/plugin.json &&
+    printf '{\n  "name": "demo-market",\n  "owner": { "name": "Someone" },\n  "plugins": [\n    { "name": "%s", "source": "./" }\n  ]\n}\n' "${2:-demo-plugin}" > .claude-plugin/marketplace.json
+}
+plugin_ok() { demo_plugin '[ "./.agents/skills/demo/" ]'; }
+plugin_without_marketplace() { demo_plugin && rm .claude-plugin/marketplace.json; }
+marketplace_without_plugin() { demo_plugin && rm .claude-plugin/plugin.json; }
+plugin_name_mismatch() { demo_plugin "" other; }
+plugin_skill_without_skill_md() { demo_plugin '["./.agents/skills/demo", "./.agents/skills/ghost"]'; }
+plugin_exposes_init_project() { demo_plugin '["./.agents/skills/demo", "./.agents/skills/init-project"]'; }
+plugin_skill_outside_agents() { demo_plugin '["./skills/demo"]'; }
+plugin_without_skills_array() { demo_plugin '"./.agents/skills/"'; }
+
 # Skill frontmatter cases. demo_skill <line>...: rewrites the demo skill as just
 # these lines between `---` delimiters.
 demo_skill() { printf -- '%s\n' '---' "$@" '---' > .agents/skills/demo/SKILL.md; }
@@ -213,6 +229,16 @@ run_case "unknown tracker" 1 "must set issue_tracker=github or issue_tracker=jir
 run_case "command listed only as a prefix of another" 1 "::error::workflow/model-strategy.md doesn't list the dem command"$'\n'"Workflow integrity: 4 problem(s) found." prefix_only_listing
 run_case "missing entry file" 1 $'::error::missing CLAUDE.md\nWorkflow integrity: 1 problem(s) found.' missing_entry_file
 run_case "missing .workflow-config" 1 $'::error::missing .workflow-config\nWorkflow integrity: 1 problem(s) found.' missing_workflow_config
+
+pm=.claude-plugin/plugin.json
+run_case "plugin manifests that match" 0 "Workflow integrity: OK." plugin_ok
+run_case "plugin without a marketplace manifest" 1 $'::error::missing .claude-plugin/marketplace.json (.claude-plugin/ needs both manifests)\nWorkflow integrity: 1 problem(s) found.' plugin_without_marketplace
+run_case "marketplace without a plugin manifest" 1 $'::error::missing .claude-plugin/plugin.json (.claude-plugin/ needs both manifests)\nWorkflow integrity: 1 problem(s) found.' marketplace_without_plugin
+run_case "plugin names that don't match" 1 ".claude-plugin/marketplace.json lists plugin 'other', but $pm names it 'demo-plugin'" plugin_name_mismatch
+run_case "plugin skill with no SKILL.md" 1 $'::error::'"$pm lists ./.agents/skills/ghost, which has no SKILL.md"$'\nWorkflow integrity: 1 problem(s) found.' plugin_skill_without_skill_md
+run_case "plugin that exposes init-project" 1 "$pm exposes init-project" plugin_exposes_init_project
+run_case "plugin skill outside .agents/skills/" 1 "$pm lists skill path ./skills/demo; use ./.agents/skills/<name>" plugin_skill_outside_agents
+run_case "plugin skills that aren't an array" 1 "$pm needs a \"skills\" array" plugin_without_skills_array
 
 skill=".agents/skills/demo/SKILL.md: frontmatter"
 run_case "fields in either order, optional and nested fields, body text" 0 "Workflow integrity: OK." reordered_and_optional_fields
