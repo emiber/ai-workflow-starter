@@ -11,7 +11,7 @@ Run these **before touching anything**. They're read-only — if one fails, stop
 | `git` installed | `git --version` | Install Git and retry. |
 | Inside a Git repo | `git rev-parse --is-inside-work-tree` | Run `git init` (or `cd` into the repo) first. |
 | `main` branch exists | `git show-ref --verify refs/heads/main` | Create it, or tell the agent your default branch name. |
-| `origin` remote set | `git remote get-url origin` | `git remote add origin <url>` — needed for push/PR. |
+| `origin` remote set | `git remote get-url origin > /dev/null` (PowerShell: `> $null`). It prints nothing, so a credential embedded in the URL is never shown. | `git remote add origin <url>` — needed for push/PR. |
 | `gh` authenticated | `gh auth status` | `gh auth login`. The PR always goes to GitHub, whatever the issue tracker. |
 | `gh` supports sub-issues (≥ 2.94) | `gh --version` (compare to 2.94.0) | Upgrade `gh`; or, on older `gh` / GitHub Enterprise Server, use the REST fallback in `workflow/issue-tracker.md` for parent detection and sub-issue links. Step 1 reads an issue's `parent` to detect epics, so this is required whenever epics are in play. |
 | Working tree clean | `git status --porcelain` is empty | Commit, stash, or discard changes before starting. |
