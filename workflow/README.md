@@ -134,7 +134,7 @@ Reply to the user in the language they write in. But all artifacts — code, com
 
 A few rules the agents enforce (full detail in `workflow/principles.md` and `workflow/git-flow.md`):
 
-- **Atomic components + tests.** Prefer the smallest composable units; each ships with unit tests and coverage meets the project threshold (default 85%).
+- **Atomic components + tests.** Prefer the smallest composable units; each ships with unit tests and coverage meets the project threshold (default 85%). Tests check behavior, and a bug fix starts with a failing test that reproduces it.
 - **Plan approval before code.** `/work-issue` posts a structured plan and waits for your explicit OK before writing code (trivial changes: a one-sentence confirmation).
 - **Independent self-review before the PR.** A fresh agent with a clean context reviews the diff against the issue, the Definition of Done, and a security checklist; blockers are fixed before the PR opens.
 - **No hidden gates.** Every PR has a Verification section listing each gate (lint, tests, coverage, self-review, security, docs) as pass or n/a with the reason.

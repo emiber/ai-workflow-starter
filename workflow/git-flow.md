@@ -133,7 +133,7 @@ git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
   - **Understanding** — the goal and each acceptance criterion, one line each.
   - **Files** — what you'll create or change.
   - **Steps** — in order.
-  - **Test plan** — the tests you'll add or update, and the edge cases they cover.
+  - **Test plan** — the tests you'll add or update, and the edge cases they cover. For a bug fix (a `fix` branch, step 3), name the regression test that reproduces the bug.
   - **Open questions** — anything that blocks correctness. Ask instead of guessing.
 
   A **trivial** change (a typo, a one-line fix, a docs tweak with no behavior change) skips the full plan: state the change in one sentence and get a yes. If the user adjusts the plan, implement the adjusted version.
@@ -148,8 +148,10 @@ git checkout -b feat/<n>-<slug>       # child branch, cut from the epic branch
 Refs #<n>
 ```
 
-- Every new component ships with unit tests, and test coverage must meet the threshold in `docs/ARCHITECTURE.md` (default 85% — see `workflow/principles.md`).
+- Every new component ships with unit tests, and test coverage must meet the threshold in `docs/ARCHITECTURE.md` (default 85% — see `workflow/principles.md`). Tests check behavior, not implementation (`workflow/principles.md`, "Test behavior, not implementation").
+- **Bug fixes start with a failing test.** On a `fix` branch, write the regression test before changing the code, run it, and see it fail for the expected reason: the bug, not a setup or syntax error. Then fix the root cause; a guard that only hides the symptom isn't a fix. If an honest regression test is impractical, don't write a bad one: give the reason on the Verification **Tests** line (step 6).
 - **Run the quality gate locally**: the lint and test-with-coverage commands recorded in the **Quality gate** section of `docs/ARCHITECTURE.md` — the same ones CI runs. If the file doesn't list them (a project initialized before they were recorded), detect them from the project (package scripts, `pyproject.toml`, `.github/workflows/ci.yml`), use them, and propose recording them as a follow-up (step 7). If something fails or coverage is below the threshold, fix it before going on.
+- **Question the premise after two failed attempts.** When two attempts that rest on the same premise fail the same check (a test, lint, the quality gate), state that premise in one sentence and check it against the code before a third attempt. If it's wrong, the next attempt drops it. This checks your own reasoning; it isn't a stop to wait for the user.
 - **Check the coverage of what you touched**, not just the total: a change can keep the global number above the threshold while its own new code is barely tested. List any new or changed source file below the threshold in the PR's **Verification** section, and add tests unless there's a real reason (say which).
 
 ### 5. Self-review — before the PR
@@ -193,7 +195,7 @@ gh pr create \
 
 ## Verification
 - Lint: <command> — pass
-- Tests: <command> — pass
+- Tests: <command> — pass; regression: <test>, failed before the fix | regression: none — <reason>
 - Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason>
 - Self-review: <blockers found and fixed, or none>; suggestions not applied: <list, or none> (separate agent | inline)
 - Security: pass | no security surface touched
@@ -205,7 +207,7 @@ None | - <item>"
 
 A long body is easier to pass with `--body-file <file>` (and avoids shell-quoting trouble, especially in PowerShell).
 
-**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
+**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. On a bug fix — a head branch or PR title of type `fix`, the same rule `workflow/pr-review.md` applies — the **Tests** line also names the regression test from step 4 and says it failed before the fix, or gives `none — <reason>` when an honest one is impractical or no test applies (e.g. a docs-only fix); other changes drop the `regression` part. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
 
 ### 7. Offer follow-ups
 
@@ -227,6 +229,8 @@ An issue isn't done until all of these hold. Check them before opening the PR:
 - [ ] All applicable requirements in the refined issue are met, including its acceptance criteria.
 - [ ] The plan was approved before implementing (or the change was confirmed as trivial).
 - [ ] New components have unit tests; coverage meets the threshold in `docs/ARCHITECTURE.md` (default 85%), and any new or changed file below it is listed in Verification with the reason.
+- [ ] Tests check behavior: none would still pass if the code under test returned nothing or did nothing, unless that case expects nothing to happen (`workflow/principles.md`).
+- [ ] A bug fix has a regression test that failed before the fix, or the Verification **Tests** line gives the reason there's none.
 - [ ] Linter and tests pass locally, using the Quality gate commands in `docs/ARCHITECTURE.md`.
 - [ ] The self-review (step 5) left no unresolved blockers.
 - [ ] No secrets or credentials committed, and the change passes the Security checklist in `workflow/pr-review.md` (or touches no security surface).
