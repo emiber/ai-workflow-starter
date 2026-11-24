@@ -195,7 +195,7 @@ gh pr create \
 
 ## Verification
 - Lint: <command> — pass
-- Tests: <command> — pass; regression (fix only): <test>, failed before the fix | none — <reason>
+- Tests: <command> — pass; regression: <test>, failed before the fix | regression: none — <reason>
 - Coverage: <total>% (threshold <t>%); new/changed files below threshold: none | <file — reason>
 - Self-review: <blockers found and fixed, or none>; suggestions not applied: <list, or none> (separate agent | inline)
 - Security: pass | no security surface touched
@@ -207,7 +207,7 @@ None | - <item>"
 
 A long body is easier to pass with `--body-file <file>` (and avoids shell-quoting trouble, especially in PowerShell).
 
-**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. On a bug fix, the **Tests** line also names the regression test from step 4 and says it failed before the fix, or gives `none — <reason>` when an honest one is impractical or no test applies (e.g. a docs-only fix); other changes drop the `regression` part. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
+**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. On a bug fix — a head branch or PR title of type `fix`, the same rule `workflow/pr-review.md` applies — the **Tests** line also names the regression test from step 4 and says it failed before the fix, or gives `none — <reason>` when an honest one is impractical or no test applies (e.g. a docs-only fix); other changes drop the `regression` part. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
 
 ### 7. Offer follow-ups
 
@@ -229,7 +229,7 @@ An issue isn't done until all of these hold. Check them before opening the PR:
 - [ ] All applicable requirements in the refined issue are met, including its acceptance criteria.
 - [ ] The plan was approved before implementing (or the change was confirmed as trivial).
 - [ ] New components have unit tests; coverage meets the threshold in `docs/ARCHITECTURE.md` (default 85%), and any new or changed file below it is listed in Verification with the reason.
-- [ ] Tests check behavior: none would still pass if the code under test returned nothing or did nothing (`workflow/principles.md`).
+- [ ] Tests check behavior: none would still pass if the code under test returned nothing or did nothing, unless that case expects nothing to happen (`workflow/principles.md`).
 - [ ] A bug fix has a regression test that failed before the fix, or the Verification **Tests** line gives the reason there's none.
 - [ ] Linter and tests pass locally, using the Quality gate commands in `docs/ARCHITECTURE.md`.
 - [ ] The self-review (step 5) left no unresolved blockers.
