@@ -207,7 +207,7 @@ None | - <item>"
 
 A long body is easier to pass with `--body-file <file>` (and avoids shell-quoting trouble, especially in PowerShell).
 
-**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. On a bug fix, the **Tests** line also names the regression test from step 4 and says it failed before the fix, or gives `none — <reason>` when an honest one is impractical; other changes drop the `regression` part. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
+**Verification rules.** Every gate gets a line. A gate that doesn't apply (e.g. no tests for a docs-only change) is `n/a` with the reason — never dropped. On a bug fix, the **Tests** line also names the regression test from step 4 and says it failed before the fix, or gives `none — <reason>` when an honest one is impractical or no test applies (e.g. a docs-only fix); other changes drop the `regression` part. Never report a gate as passed unless you ran it in this session. A failing gate never appears in a PR: it stops the flow until it's fixed (or you report to the user) — the PR opens only with every gate passing or `n/a`.
 
 ### 7. Offer follow-ups
 
